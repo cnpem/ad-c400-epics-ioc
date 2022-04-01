@@ -76,10 +76,10 @@ c400drv::c400drv(const char *portName, char *ip)
     setDoubleParam (P_Volt3,          3.0);
     setDoubleParam (P_Volt4,          4.0);
 
-
     pasynOctetSyncIO->connect(ip, 0, &pasynUserEcho, NULL);
     pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
     pasynOctetSyncIO->setOutputEos(pasynUserEcho, "\n", strlen("\n"));
+    
 }
 
 
@@ -93,11 +93,28 @@ asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
     const char *paramName;
     const char* functionName = "writeFloat64";
     double result;
+    
     if (function == P_Volt1) {
         result = set_voltage(1, value);
         setDoubleParam (P_Volt1,      result);
         std::cout << "my res is: " << result << std::endl;
         
+    }
+    else if (function == P_Volt2){
+        result = set_voltage(2, value);
+        setDoubleParam (P_Volt2,      result);
+        std::cout << "my res is: " << result << std::endl;
+    }
+    else if (function == P_Volt3){
+        result = set_voltage(3, value);
+        setDoubleParam (P_Volt3,      result);
+        std::cout << "value: " << value << std::endl;
+        std::cout << "result: " << result << std::endl;
+    }
+    else if (function == P_Volt4){
+        result = set_voltage(4, value);
+        setDoubleParam (P_Volt4,      result);
+        std::cout << "my res is: " << result << std::endl;
     }
 
     status = (asynStatus) callParamCallbacks();
@@ -157,15 +174,23 @@ std::string c400drv::send_to_equipment(const char *writeBuffer)
 float c400drv::get_channel_val(std::string val, int channel)
 {
     std::string parse = val;
-    int end_line = parse.find("\n", 0) + 1;
-    printf("end_line %d \n", end_line);
+    std::string str_now;
+    int end;
+    int query_val;
+    int end_line = parse.find("\n", 0);
 
-    int first_val = parse.substr(end_line).find(" ", 0);
+    str_now = parse.substr(end_line);
+    query_val = str_now.find(" ", 0);
+    for(int i = 1; i < channel; i++)
+    {
+        query_val = str_now.find(" ", 0);
+        str_now = str_now.substr(query_val + 3);
+        // std::cout << str_now << std::endl;
+    }
 
-    printf("end_line %d \n", first_val);
-    std::string final = parse.substr(end_line, first_val);
-    std::cout << final << std::endl;
-    return std::stof(final);
+    str_now = str_now.substr(0, query_val);
+    // std::cout << str_now << std::endl;
+    return std::stof(str_now);
 }
 
 double c400drv::set_voltage(int channel, double val)
@@ -225,7 +250,7 @@ double c400drv::set_voltage(int channel, double val)
         // std::cout << "sent string: " << cmd_msg_send << std::endl;
         send_to_equipment(cmd_msg_send.c_str());
         cmd_msg_read = "CONFigure:DHI?";
-        res = get_channel_val(send_to_equipment(cmd_msg_read.c_str()), 1);
+        res = get_channel_val(send_to_equipment(cmd_msg_read.c_str()), channel);
         std::cout << "my res is2222: " << res << std::endl;
         return res;
         

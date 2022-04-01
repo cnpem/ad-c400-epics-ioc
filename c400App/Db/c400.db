@@ -13,7 +13,7 @@ record(ai, "$(P)$(R)get_volt_ch2")
    field(DTYP, "asynFloat64")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))VOLT2")
    field(PREC, "5")
-   #field(SCAN, "I/O Intr")
+   field(SCAN, "I/O Intr")
 }
 
 record(ai, "$(P)$(R)get_volt_ch3")
@@ -22,7 +22,7 @@ record(ai, "$(P)$(R)get_volt_ch3")
    field(DTYP, "asynFloat64")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))VOLT3")
    field(PREC, "5")
-   #field(SCAN, "I/O Intr")
+   field(SCAN, "I/O Intr")
 }
 
 record(ai, "$(P)$(R)get_volt_ch4")
@@ -31,7 +31,7 @@ record(ai, "$(P)$(R)get_volt_ch4")
    field(DTYP, "asynFloat64")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))VOLT4")
    field(PREC, "5")
-   #field(SCAN, "I/O Intr")
+   field(SCAN, "I/O Intr")
 }
 
 
