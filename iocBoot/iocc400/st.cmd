@@ -1,4 +1,4 @@
-#!/home/hugo/SOL/IOCs/c400/bin/linux-x86_64/c400
+#!bin/linux-x86_64/c400
 
 #- You may have to change c400 to something else
 #- everywhere it appears in this file
