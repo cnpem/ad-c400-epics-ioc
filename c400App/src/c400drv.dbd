@@ -1,0 +1,6 @@
+include "base.dbd"
+include "asyn.dbd"
+include "drvAsynIPPort.dbd"
+registrar(c400drvRegister)
+registrar(drvAsynIPPortRegisterCommands)
+registrar(drvAsynSerialPortRegisterCommands)
