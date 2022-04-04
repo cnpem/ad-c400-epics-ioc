@@ -3,10 +3,10 @@
 /* These are the drvInfo strings that are used to identify the parameters.
  * They are used by asyn clients, including standard asyn device support */
 
-#define P_VoltString1         "VOLT1"         /* asynFloat64,  r/w */
-#define P_VoltString2         "VOLT2"         /* asynFloat64,  r/w */
-#define P_VoltString3         "VOLT3"         /* asynFloat64,  r/w */
-#define P_VoltString4         "VOLT4"         /* asynFloat64,  r/w */
+#define P_DHIString1         "DHI1"         /* asynFloat64,  r/w */
+#define P_DHIString2         "DHI2"         /* asynFloat64,  r/w */
+#define P_DHIString3         "DHI3"         /* asynFloat64,  r/w */
+#define P_DHIString4         "DHI4"         /* asynFloat64,  r/w */
         /* asynFloat64,  r/w */
 // #define P_VertGainString           "SCOPE_VERT_GAIN"            /* asynFloat64,  r/w */
 
@@ -25,17 +25,18 @@ public:
     virtual asynStatus readFloat64(asynUser *pasynUser, epicsFloat64 *value);
 
     /* These are the methods that are new to this class */
-    double set_voltage(int channel, double val);
+    
 protected:
     /** Values used for pasynUser->reason, and indexes into the parameter library. */
-    int P_Volt1;
-    int P_Volt2;
-    int P_Volt3;
-    int P_Volt4;
+    int P_DHI1;
+    int P_DHI2;
+    int P_DHI3;
+    int P_DHI4;
 
 private:
     asynUser *pasynUserEcho;
     float get_channel_val(std::string val, int channel);
     std::string send_to_equipment(const char *msg_ptr);
-
+    double set_voltage(int channel, double val);
+    void sync_w_device();
 };

@@ -1,29 +1,3 @@
-/*____________________________________________________________________________________________________________________________________
-|   Driver support for Arinax Luciole Cold Light Source developed with AsynPortDriver module from asyn/SynApps                    |
-|   Brazilian Synchroton Light National Laboratory - Campinas, 05/21/2019                                                         |
-|   Author: Allan S. B. Bugyi   (allan.bugyi@lnls.br)                                         |
-|   Version: 1.0                                                              |
-|   Tested                                                                                                                        |
-|                                                                                                                                     |
-|       License:                                                                                                                      |
-|        This software is distributed under the following ISC license:                                                                |
-|                                                                                                                                     |
-|        Copyright © 2019 BRAZILIAN SYNCHROTRON LIGHT SOURCE <sol@lnls.br>                                                            |
-|                                                                                                                                     |
-|        Permission to use, copy, modify, and/or distribute this software for any                                                     |
-|        purpose with or without fee is hereby granted, provided that the above                                                       |
-|        copyright notice and this permission notice appear in all copies.                                                            |
-|                                                                                                                                     |
-|        THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES                                                     |
-|        WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF                                                             |
-|        MERCHANTABILITY AND FITNESS.  IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR                                                     |
-|        ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES                                                       |
-|        WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION                                                 |
-|        OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN                                                       |
-|        CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.                                                                     |
-|_____________________________________________________________________________________________________________________________________|*/
-
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -50,7 +24,7 @@
 
 #define TIMEOUT 1.0
 
-#define C400_MSG_HEADER  "CONFigure:DHI?"
+#define C400_MSG_DHI "CONFigure:DHI?"
 
 
 
@@ -66,19 +40,16 @@ c400drv::c400drv(const char *portName, char *ip)
                     0, /* Default priority */
                     0) /* Default stack size*/
 {
-    createParam(P_VoltString1, asynParamFloat64, &P_Volt1);
-    createParam(P_VoltString2, asynParamFloat64, &P_Volt2);
-    createParam(P_VoltString3, asynParamFloat64, &P_Volt3);
-    createParam(P_VoltString4, asynParamFloat64, &P_Volt4);
-
-    setDoubleParam (P_Volt1,          1.0);
-    setDoubleParam (P_Volt2,          2.0);
-    setDoubleParam (P_Volt3,          3.0);
-    setDoubleParam (P_Volt4,          4.0);
+    createParam(P_DHIString1, asynParamFloat64, &P_DHI1);
+    createParam(P_DHIString2, asynParamFloat64, &P_DHI2);
+    createParam(P_DHIString3, asynParamFloat64, &P_DHI3);
+    createParam(P_DHIString4, asynParamFloat64, &P_DHI4);
 
     pasynOctetSyncIO->connect(ip, 0, &pasynUserEcho, NULL);
     pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
     pasynOctetSyncIO->setOutputEos(pasynUserEcho, "\n", strlen("\n"));
+
+    sync_w_device();
     
 }
 
@@ -94,26 +65,26 @@ asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
     const char* functionName = "writeFloat64";
     double result;
     
-    if (function == P_Volt1) {
+    if (function == P_DHI1) {
         result = set_voltage(1, value);
-        setDoubleParam (P_Volt1,      result);
+        setDoubleParam (P_DHI1,      result);
         std::cout << "my res is: " << result << std::endl;
         
     }
-    else if (function == P_Volt2){
+    else if (function == P_DHI2){
         result = set_voltage(2, value);
-        setDoubleParam (P_Volt2,      result);
+        setDoubleParam (P_DHI2,      result);
         std::cout << "my res is: " << result << std::endl;
     }
-    else if (function == P_Volt3){
+    else if (function == P_DHI3){
         result = set_voltage(3, value);
-        setDoubleParam (P_Volt3,      result);
+        setDoubleParam (P_DHI3,      result);
         std::cout << "value: " << value << std::endl;
         std::cout << "result: " << result << std::endl;
     }
-    else if (function == P_Volt4){
+    else if (function == P_DHI4){
         result = set_voltage(4, value);
-        setDoubleParam (P_Volt4,      result);
+        setDoubleParam (P_DHI4,      result);
         std::cout << "my res is: " << result << std::endl;
     }
 
@@ -208,11 +179,11 @@ double c400drv::set_voltage(int channel, double val)
         std::string cmd_msg_send;
         std::string cmd_msg_read;
 
-        cmd_msg_read = C400_MSG_HEADER;
-        getDoubleParam(P_Volt1, &val_ch1);
-        getDoubleParam(P_Volt2, &val_ch2);
-        getDoubleParam(P_Volt3, &val_ch3);
-        getDoubleParam(P_Volt4, &val_ch4);
+        cmd_msg_read = C400_MSG_DHI;
+        getDoubleParam(P_DHI1, &val_ch1);
+        getDoubleParam(P_DHI2, &val_ch2);
+        getDoubleParam(P_DHI3, &val_ch3);
+        getDoubleParam(P_DHI4, &val_ch4);
         switch (channel)
         {
             case 1:
@@ -255,6 +226,26 @@ double c400drv::set_voltage(int channel, double val)
         return res;
         
 }
+
+void c400drv::sync_w_device()
+{
+    double res_DHI_ch1;
+    double res_DHI_ch2;
+    double res_DHI_ch3;
+    double res_DHI_ch4;
+
+    // Get DHI val
+    res_DHI_ch1 = get_channel_val(send_to_equipment(C400_MSG_DHI), 1);
+    setDoubleParam (P_DHI1,          res_DHI_ch1);
+    res_DHI_ch2 = get_channel_val(send_to_equipment(C400_MSG_DHI), 2);
+    setDoubleParam (P_DHI2,          res_DHI_ch2);
+    res_DHI_ch3 = get_channel_val(send_to_equipment(C400_MSG_DHI), 3);
+    setDoubleParam (P_DHI3,          res_DHI_ch3);
+    res_DHI_ch4 = get_channel_val(send_to_equipment(C400_MSG_DHI), 4);
+    setDoubleParam (P_DHI4,          res_DHI_ch4);
+}
+
+
 //--------------------------------------------------------
 
 extern "C" int c400CreateDriver(const char *portName, char *ip){
