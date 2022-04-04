@@ -23,10 +23,15 @@
 #include <epicsExport.h>
 
 #define TIMEOUT 1.0
-#define C400_MSG_DHI_ASK "CONFigure:DHI?"
-#define C400_MSG_DHI_SET "CONFigure:DHI "
+
 #define C400_MSG_DAC_ASK "CONFigure:DAC?"
 #define C400_MSG_DAC_SET "CONFigure:DAC "
+#define C400_MSG_DEAD_ASK "CONFigure:DEADtime?"
+#define C400_MSG_DEAD_SET "CONFigure:DEADtime "
+#define C400_MSG_DHI_ASK "CONFigure:DHI?"
+#define C400_MSG_DHI_SET "CONFigure:DHI "
+#define C400_MSG_DLO_ASK "CONFigure:DLO?"
+#define C400_MSG_DLO_SET "CONFigure:DLO "
 
 static const char *driverName = "c400driver";
 
@@ -45,10 +50,15 @@ c400drv::c400drv(const char *portName, char *ip)
     createParam(P_DACString2, asynParamFloat64, &P_DAC2);
     createParam(P_DACString3, asynParamFloat64, &P_DAC3);
     createParam(P_DACString4, asynParamFloat64, &P_DAC4);
+    createParam(P_DEADString, asynParamFloat64, &P_DEAD);
     createParam(P_DHIString1, asynParamFloat64, &P_DHI1);
     createParam(P_DHIString2, asynParamFloat64, &P_DHI2);
     createParam(P_DHIString3, asynParamFloat64, &P_DHI3);
     createParam(P_DHIString4, asynParamFloat64, &P_DHI4);
+    createParam(P_DLOString1, asynParamFloat64, &P_DLO1);
+    createParam(P_DLOString2, asynParamFloat64, &P_DLO2);
+    createParam(P_DLOString3, asynParamFloat64, &P_DLO3);
+    createParam(P_DLOString4, asynParamFloat64, &P_DLO4);
 
 
     pasynOctetSyncIO->connect(ip, 0, &pasynUserEcho, NULL);
@@ -72,36 +82,64 @@ asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
     double result;
     
     if (function == P_DAC1) {
-        result = set_1_channel(1, value);
+        result = set_direct(C400_MSG_DAC_SET, C400_MSG_DAC_ASK, 1, value);
         setDoubleParam (P_DAC1,      result);
     }
     else if (function == P_DAC2){
-        result = set_1_channel(2, value);
+        result = set_direct(C400_MSG_DAC_SET, C400_MSG_DAC_ASK, 2, value);
         setDoubleParam (P_DAC2,      result);
     }
     else if (function == P_DAC3){
-        result = set_1_channel(3, value);
+        result = set_direct(C400_MSG_DAC_SET, C400_MSG_DAC_ASK, 3, value);
         setDoubleParam (P_DAC3,      result);
     }
     else if (function == P_DAC4){
-        result = set_1_channel(4, value);
+        result = set_direct(C400_MSG_DAC_SET, C400_MSG_DAC_ASK, 4, value);
         setDoubleParam (P_DAC4,      result);
     }
+    else if (function == P_DEAD){
+        result = set_direct(C400_MSG_DEAD_SET, C400_MSG_DEAD_ASK, 0, value);
+        setDoubleParam (P_DEAD,      value);
+    }
     else if (function == P_DHI1) {
-        result = set_4_channels(1, value);
+        result = set_4_channels(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
+                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 1, value);
         setDoubleParam (P_DHI1,      result);
     }
     else if (function == P_DHI2){
-        result = set_4_channels(2, value);
+        result = set_4_channels(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
+                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 2, value);
         setDoubleParam (P_DHI2,      result);
     }
     else if (function == P_DHI3){
-        result = set_4_channels(3, value);
+        result = set_4_channels(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
+                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 3, value);
         setDoubleParam (P_DHI3,      result);
     }
     else if (function == P_DHI4){
-        result = set_4_channels(4, value);
+        result = set_4_channels(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
+                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 4, value);
         setDoubleParam (P_DHI4,      result);
+    }
+    else if (function == P_DLO1) {
+        result = set_4_channels(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
+                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 1, value);
+        setDoubleParam (P_DLO1,      result);
+    }
+    else if (function == P_DLO2){
+        result = set_4_channels(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
+                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 2, value);
+        setDoubleParam (P_DLO2,      result);
+    }
+    else if (function == P_DLO3){
+        result = set_4_channels(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
+                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 3, value);
+        setDoubleParam (P_DLO3,      result);
+    }
+    else if (function == P_DLO4){
+        result = set_4_channels(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
+                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 4, value);
+        setDoubleParam (P_DLO4,      result);
     }
 
     status = (asynStatus) callParamCallbacks();
@@ -180,8 +218,9 @@ float c400drv::get_channel_val(std::string val, int channel)
     return std::stof(str_now);
 }
 
-double c400drv::set_1_channel(int channel, double val)
+double c400drv::set_direct(const char *command_set, const char *command_ask, int channel, double val)
 {
+    // If 0 is passed to channel, them no specific channel is set
     double res;
     std::string str_channel;
     std::string str_val;
@@ -190,14 +229,24 @@ double c400drv::set_1_channel(int channel, double val)
     str_channel = std::__cxx11::to_string(channel);
     str_val = std::__cxx11::to_string(val);
 
-    cmd_msg_send =  C400_MSG_DAC_SET + str_channel + " " + str_val;
-    send_to_equipment(cmd_msg_send.c_str());
-    cmd_msg_read = C400_MSG_DAC_ASK;
-    res = get_channel_val(send_to_equipment(cmd_msg_read.c_str()), channel);
-    return res;
+    // std::cout << "estoy vivo" << std::endl;
+    if (channel){
+        cmd_msg_send =  command_set + str_channel + " " + str_val;
+        send_to_equipment(cmd_msg_send.c_str());
+        cmd_msg_read = command_ask;
+        res = get_channel_val(send_to_equipment(cmd_msg_read.c_str()), channel);
+        return res;
+    }
+
+    else{
+        cmd_msg_send =  command_set + str_val;
+        send_to_equipment(cmd_msg_send.c_str());
+        return 0;
+    }
 }
 
-double c400drv::set_4_channels(int channel, double val)
+double c400drv::set_4_channels(const char *command_set, const char *command_ask, int param1, 
+                                int param2, int param3, int param4, int channel, double val)
 {
         asynStatus status = asynSuccess;
         double res;
@@ -212,11 +261,11 @@ double c400drv::set_4_channels(int channel, double val)
         std::string cmd_msg_send;
         std::string cmd_msg_read;
 
-        cmd_msg_read = C400_MSG_DHI_ASK;
-        getDoubleParam(P_DHI1, &val_ch1);
-        getDoubleParam(P_DHI2, &val_ch2);
-        getDoubleParam(P_DHI3, &val_ch3);
-        getDoubleParam(P_DHI4, &val_ch4);
+        getDoubleParam(param1, &val_ch1);
+        getDoubleParam(param2, &val_ch2);
+        getDoubleParam(param3, &val_ch3);
+        getDoubleParam(param4, &val_ch4);
+
         switch (channel)
         {
             case 1:
@@ -249,15 +298,13 @@ double c400drv::set_4_channels(int channel, double val)
         }
 
 
-        cmd_msg_send = "CONFigure:DHI " + str_val_ch1 + " " + str_val_ch2 + " "\
+        cmd_msg_send = command_set + str_val_ch1 + " " + str_val_ch2 + " "\
                                         + str_val_ch3 + " " + str_val_ch4 + " ";
-        // std::cout << "sent string: " << cmd_msg_send << std::endl;
         send_to_equipment(cmd_msg_send.c_str());
-        cmd_msg_read = "CONFigure:DHI?";
+        cmd_msg_read = command_ask;
         res = get_channel_val(send_to_equipment(cmd_msg_read.c_str()), channel);
         std::cout << "my res is2222: " << res << std::endl;
         return res;
-        
 }
 
 void c400drv::sync_w_device()
@@ -266,10 +313,15 @@ void c400drv::sync_w_device()
     double res_DAC_ch2;
     double res_DAC_ch3;
     double res_DAC_ch4;
+    double res_DEAD;
     double res_DHI_ch1;
     double res_DHI_ch2;
     double res_DHI_ch3;
     double res_DHI_ch4;
+    double res_DLO_ch1;
+    double res_DLO_ch2;
+    double res_DLO_ch3;
+    double res_DLO_ch4;
 
     // Get DAC val
     res_DAC_ch1 = get_channel_val(send_to_equipment(C400_MSG_DAC_ASK), 1);
@@ -281,6 +333,10 @@ void c400drv::sync_w_device()
     res_DAC_ch4 = get_channel_val(send_to_equipment(C400_MSG_DAC_ASK), 4);
     setDoubleParam (P_DAC4,          res_DAC_ch4);
 
+    // Get DEAD time
+    res_DEAD = get_channel_val(send_to_equipment(C400_MSG_DEAD_ASK), 1);
+    setDoubleParam (P_DEAD,          res_DEAD);
+
     // Get DHI val
     res_DHI_ch1 = get_channel_val(send_to_equipment(C400_MSG_DHI_ASK), 1);
     setDoubleParam (P_DHI1,          res_DHI_ch1);
@@ -290,6 +346,17 @@ void c400drv::sync_w_device()
     setDoubleParam (P_DHI3,          res_DHI_ch3);
     res_DHI_ch4 = get_channel_val(send_to_equipment(C400_MSG_DHI_ASK), 4);
     setDoubleParam (P_DHI4,          res_DHI_ch4);
+
+    // Get DHI val
+    res_DLO_ch1 = get_channel_val(send_to_equipment(C400_MSG_DLO_ASK), 1);
+    setDoubleParam (P_DLO1,          res_DLO_ch1);
+    res_DLO_ch2 = get_channel_val(send_to_equipment(C400_MSG_DLO_ASK), 2);
+    setDoubleParam (P_DLO2,          res_DLO_ch2);
+    res_DLO_ch3 = get_channel_val(send_to_equipment(C400_MSG_DLO_ASK), 3);
+    setDoubleParam (P_DLO3,          res_DLO_ch3);
+    res_DLO_ch4 = get_channel_val(send_to_equipment(C400_MSG_DLO_ASK), 4);
+    setDoubleParam (P_DLO4,          res_DLO_ch4);
+
 }
 
 

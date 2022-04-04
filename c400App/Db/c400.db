@@ -79,6 +79,26 @@ record(ao, "$(P)$(R)set_DAC_ch4")
    field(EGU,"V")
 }
 
+record(ai, "$(P)$(R)get_DEAD_time")
+{
+   field(DESC,"Get DEAD time")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DEAD")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"s")
+}
+
+record(ao, "$(P)$(R)set_DEAD_time")
+{
+   field(DESC,"Set DEAD time")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DEAD")
+   field(PREC, "5")
+   field(EGU,"s")
+}
+
 record(ai, "$(P)$(R)get_DHI_ch1")
 {
    field(DESC,"Get DHI for ch1")
@@ -155,6 +175,86 @@ record(ao, "$(P)$(R)set_DHI_ch4")
    field(DESC,"Set DHI for ch4")
    field(DTYP, "asynFloat64")
    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DHI4")
+   field(PREC, "5")
+   field(EGU,"V")
+}
+
+record(ai, "$(P)$(R)get_DLO_ch1")
+{
+   field(DESC,"Get DLO for ch1")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DLO1")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"V")
+}
+
+record(ai, "$(P)$(R)get_DLO_ch2")
+{
+   field(DESC,"Get DLO for ch2")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DLO2")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"V")
+}
+
+record(ai, "$(P)$(R)get_DLO_ch3")
+{
+   field(DESC,"Get DLO for ch3")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DLO3")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"V")
+}
+
+record(ai, "$(P)$(R)get_DLO_ch4")
+{
+   field(DESC,"Get DLO for ch4")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DLO4")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"V")
+}
+
+record(ao, "$(P)$(R)set_DLO_ch1")
+{
+   field(DESC,"Set DLO for ch1")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DLO1")
+   field(PREC, "5")
+   field(EGU,"V")
+}
+
+record(ao, "$(P)$(R)set_DLO_ch2")
+{
+   field(DESC,"Set DLO for ch2")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DLO2")
+   field(PREC, "5")
+   field(EGU,"V")
+}
+
+record(ao, "$(P)$(R)set_DLO_ch3")
+{
+   field(DESC,"Set DLO for ch3")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DLO3")
+   field(PREC, "5")
+   field(EGU,"V")
+}
+
+record(ao, "$(P)$(R)set_DLO_ch4")
+{
+   field(DESC,"Set DLO for ch4")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DLO4")
    field(PREC, "5")
    field(EGU,"V")
 }

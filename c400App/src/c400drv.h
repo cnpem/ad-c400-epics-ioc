@@ -7,10 +7,16 @@
 #define P_DACString2         "DAC2"         /* asynFloat64,  r/w */
 #define P_DACString3         "DAC3"         /* asynFloat64,  r/w */
 #define P_DACString4         "DAC4"         /* asynFloat64,  r/w */
+#define P_DEADString         "DEAD"         /* asynFloat64,  r/w */
 #define P_DHIString1         "DHI1"         /* asynFloat64,  r/w */
 #define P_DHIString2         "DHI2"         /* asynFloat64,  r/w */
 #define P_DHIString3         "DHI3"         /* asynFloat64,  r/w */
 #define P_DHIString4         "DHI4"         /* asynFloat64,  r/w */
+#define P_DLOString1         "DLO1"         /* asynFloat64,  r/w */
+#define P_DLOString2         "DLO2"         /* asynFloat64,  r/w */
+#define P_DLOString3         "DLO3"         /* asynFloat64,  r/w */
+#define P_DLOString4         "DLO4"         /* asynFloat64,  r/w */
+
         /* asynFloat64,  r/w */
 // #define P_VertGainString           "SCOPE_VERT_GAIN"            /* asynFloat64,  r/w */
 
@@ -36,16 +42,22 @@ protected:
     int P_DAC2;
     int P_DAC3;
     int P_DAC4;
+    int P_DEAD;
     int P_DHI1;
     int P_DHI2;
     int P_DHI3;
     int P_DHI4;
+    int P_DLO1;
+    int P_DLO2;
+    int P_DLO3;
+    int P_DLO4;
 
 private:
     asynUser *pasynUserEcho;
     float get_channel_val(std::string val, int channel);
     std::string send_to_equipment(const char *msg_ptr);
-    double set_4_channels(int channel, double val);
-    double set_1_channel(int channel, double val);
+    double set_4_channels(const char *command_set, const char *command_ask, int param1, 
+                            int param2, int param3, int param4, int channel, double val);
+    double set_direct(const char *command_set, const char *command_ask, int channel, double val);
     void sync_w_device();
 };
