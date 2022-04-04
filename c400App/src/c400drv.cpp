@@ -32,6 +32,11 @@
 #define C400_MSG_DHI_SET "CONFigure:DHI "
 #define C400_MSG_DLO_ASK "CONFigure:DLO?"
 #define C400_MSG_DLO_SET "CONFigure:DLO "
+#define C400_MSG_HIVO_VOLTS_ASK "CONFigure:HIVOltage:VOLts?"
+#define C400_MSG_HIVO_VOLTS_SET "CONFigure:HIVOltage:VOLts "
+#define C400_MSG_HIVO_ENABLE_ASK "CONFigure:HIVOltage:ENable?"
+#define C400_MSG_HIVO_ENABLE_SET "CONFigure:HIVOltage:ENable "
+
 
 static const char *driverName = "c400driver";
 
@@ -39,8 +44,8 @@ static const char *driverName = "c400driver";
 c400drv::c400drv(const char *portName, char *ip)
    : asynPortDriver(portName,
                     1, /* maxAddr */
-                    asynFloat64Mask | asynDrvUserMask, /* Interface mask */
-                    asynFloat64Mask | asynEnumMask,  /* Interrupt mask */
+                    asynInt32Mask | asynFloat64Mask | asynDrvUserMask, /* Interface mask */
+                    asynInt32Mask | asynFloat64Mask | asynEnumMask,  /* Interrupt mask */
                     ASYN_CANBLOCK, /* asynFlags.  This driver does not block and it is not multi-device, so flag is 0 */
                     1, /* Autoconnect */
                     0, /* Default priority */
@@ -59,6 +64,14 @@ c400drv::c400drv(const char *portName, char *ip)
     createParam(P_DLOString2, asynParamFloat64, &P_DLO2);
     createParam(P_DLOString3, asynParamFloat64, &P_DLO3);
     createParam(P_DLOString4, asynParamFloat64, &P_DLO4);
+    createParam(P_HIVO_VOLTSString1, asynParamFloat64, &P_HIVO_VOLTS1);
+    createParam(P_HIVO_VOLTSString2, asynParamFloat64, &P_HIVO_VOLTS2);
+    createParam(P_HIVO_VOLTSString3, asynParamFloat64, &P_HIVO_VOLTS3);
+    createParam(P_HIVO_VOLTSString4, asynParamFloat64, &P_HIVO_VOLTS4);
+    createParam(P_HIVO_ENABLEString1, asynParamInt32, &P_HIVO_ENABLE1);
+    createParam(P_HIVO_ENABLEString2, asynParamInt32, &P_HIVO_ENABLE2);
+    createParam(P_HIVO_ENABLEString3, asynParamInt32, &P_HIVO_ENABLE3);
+    createParam(P_HIVO_ENABLEString4, asynParamInt32, &P_HIVO_ENABLE4);
 
 
     pasynOctetSyncIO->connect(ip, 0, &pasynUserEcho, NULL);
@@ -71,6 +84,56 @@ c400drv::c400drv(const char *portName, char *ip)
 
 
 //------------ asynPortDriver extended method ------------
+
+asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
+{
+    int function = pasynUser->reason;
+    asynStatus status = asynSuccess;
+    const char *paramName;
+    const char* functionName = "writeInt32";
+    double result;
+    /* Set the parameter in the parameter library. */
+    status = (asynStatus) setIntegerParam(function, value);
+
+    /* Fetch the parameter string name for possible use in debugging */
+    getParamName(function, &paramName);
+
+    if (function == P_HIVO_ENABLE1) {
+        result = set_4_channels(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
+                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 1, value, 0);
+        setIntegerParam (P_HIVO_ENABLE1,      result);
+    }
+    else if (function == P_HIVO_ENABLE2){
+        result = set_4_channels(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
+                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 2, value, 0);
+        setIntegerParam (P_HIVO_ENABLE2,      result);
+    }
+    else if (function == P_HIVO_ENABLE3){
+        result = set_4_channels(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
+                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 3, value, 0);
+        setIntegerParam (P_HIVO_ENABLE3,      result);
+    }
+    else if (function == P_HIVO_ENABLE4){
+        result = set_4_channels(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
+                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 4, value, 0);
+        setIntegerParam (P_HIVO_ENABLE4,      result);
+    }
+
+    /* Do callbacks so higher layers see any changes */
+    status = (asynStatus) callParamCallbacks();
+
+    if (status)
+        epicsSnprintf(pasynUser->errorMessage, pasynUser->errorMessageSize,
+                  "%s:%s: status=%d, function=%d, name=%s, value=%d",
+                  driverName, functionName, status, function, paramName, value);
+    else
+        asynPrint(pasynUser, ASYN_TRACEIO_DRIVER,
+              "%s:%s: function=%d, name=%s, value=%d\n",
+              driverName, functionName, function, paramName, value);
+    return status;
+}
+
+
 asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
 {
     int function = pasynUser->reason;
@@ -103,43 +166,63 @@ asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
     }
     else if (function == P_DHI1) {
         result = set_4_channels(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
-                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 1, value);
+                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 1, value, 1);
         setDoubleParam (P_DHI1,      result);
     }
     else if (function == P_DHI2){
         result = set_4_channels(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
-                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 2, value);
+                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 2, value, 1);
         setDoubleParam (P_DHI2,      result);
     }
     else if (function == P_DHI3){
         result = set_4_channels(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
-                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 3, value);
+                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 3, value, 1);
         setDoubleParam (P_DHI3,      result);
     }
     else if (function == P_DHI4){
         result = set_4_channels(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
-                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 4, value);
+                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 4, value, 1);
         setDoubleParam (P_DHI4,      result);
     }
     else if (function == P_DLO1) {
         result = set_4_channels(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
-                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 1, value);
+                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 1, value, 1);
         setDoubleParam (P_DLO1,      result);
     }
     else if (function == P_DLO2){
         result = set_4_channels(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
-                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 2, value);
+                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 2, value, 1);
         setDoubleParam (P_DLO2,      result);
     }
     else if (function == P_DLO3){
         result = set_4_channels(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
-                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 3, value);
+                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 3, value, 1);
         setDoubleParam (P_DLO3,      result);
     }
     else if (function == P_DLO4){
         result = set_4_channels(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
-                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 4, value);
+                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 4, value, 1);
         setDoubleParam (P_DLO4,      result);
+    }
+    else if (function == P_HIVO_VOLTS1) {
+        result = set_4_channels(C400_MSG_HIVO_VOLTS_SET, C400_MSG_HIVO_VOLTS_ASK, 
+                                P_HIVO_VOLTS1, P_HIVO_VOLTS2, P_HIVO_VOLTS3, P_HIVO_VOLTS4, 1, value, 1);
+        setDoubleParam (P_HIVO_VOLTS1,      result);
+    }
+    else if (function == P_HIVO_VOLTS2){
+        result = set_4_channels(C400_MSG_HIVO_VOLTS_SET, C400_MSG_HIVO_VOLTS_ASK, 
+                                P_HIVO_VOLTS1, P_HIVO_VOLTS2, P_HIVO_VOLTS3, P_HIVO_VOLTS4, 2, value, 1);
+        setDoubleParam (P_HIVO_VOLTS2,      result);
+    }
+    else if (function == P_HIVO_VOLTS3){
+        result = set_4_channels(C400_MSG_HIVO_VOLTS_SET, C400_MSG_HIVO_VOLTS_ASK, 
+                                P_HIVO_VOLTS1, P_HIVO_VOLTS2, P_HIVO_VOLTS3, P_HIVO_VOLTS4, 3, value, 1);
+        setDoubleParam (P_HIVO_VOLTS3,      result);
+    }
+    else if (function == P_HIVO_VOLTS4){
+        result = set_4_channels(C400_MSG_HIVO_VOLTS_SET, C400_MSG_HIVO_VOLTS_ASK, 
+                                P_HIVO_VOLTS1, P_HIVO_VOLTS2, P_HIVO_VOLTS3, P_HIVO_VOLTS4, 4, value, 1);
+        setDoubleParam (P_HIVO_VOLTS4,      result);
     }
 
     status = (asynStatus) callParamCallbacks();
@@ -196,7 +279,7 @@ std::string c400drv::send_to_equipment(const char *writeBuffer)
     return std::string (readBuffer);
 
 }
-float c400drv::get_channel_val(std::string val, int channel)
+float c400drv::get_channel_val(std::string val, int channel, std::string search_for=" ")
 {
     std::string parse = val;
     std::string str_now;
@@ -205,12 +288,14 @@ float c400drv::get_channel_val(std::string val, int channel)
     int end_line = parse.find("\n", 0);
 
     str_now = parse.substr(end_line);
-    query_val = str_now.find(" ", 0);
+    query_val = str_now.find(search_for, 0);
     for(int i = 1; i < channel; i++)
     {
-        query_val = str_now.find(" ", 0);
-        str_now = str_now.substr(query_val + 3);
-        // std::cout << str_now << std::endl;
+        query_val = str_now.find(search_for, 0);
+        if (search_for == " ")
+            str_now = str_now.substr(query_val + 3);
+        else if (search_for == ",")
+            str_now = str_now.substr(query_val + 1);
     }
 
     str_now = str_now.substr(0, query_val);
@@ -246,14 +331,14 @@ double c400drv::set_direct(const char *command_set, const char *command_ask, int
 }
 
 double c400drv::set_4_channels(const char *command_set, const char *command_ask, int param1, 
-                                int param2, int param3, int param4, int channel, double val)
+                                int param2, int param3, int param4, int channel, double val, int is_float=1)
 {
         asynStatus status = asynSuccess;
         double res;
-        double val_ch1;
-        double val_ch2;
-        double val_ch3;
-        double val_ch4;
+        int val_ch1;
+        int val_ch2;
+        int val_ch3;
+        int val_ch4;
         std::string str_val_ch1;
         std::string str_val_ch2;
         std::string str_val_ch3;
@@ -261,10 +346,23 @@ double c400drv::set_4_channels(const char *command_set, const char *command_ask,
         std::string cmd_msg_send;
         std::string cmd_msg_read;
 
-        getDoubleParam(param1, &val_ch1);
-        getDoubleParam(param2, &val_ch2);
-        getDoubleParam(param3, &val_ch3);
-        getDoubleParam(param4, &val_ch4);
+        if (is_float){
+            double val_ch1;
+            double val_ch2;
+            double val_ch3;
+            double val_ch4;
+            getDoubleParam(param1, &val_ch1);
+            getDoubleParam(param2, &val_ch2);
+            getDoubleParam(param3, &val_ch3);
+            getDoubleParam(param4, &val_ch4);
+        }
+
+        else{
+            getIntegerParam(param1, &val_ch1);
+            getIntegerParam(param2, &val_ch2);
+            getIntegerParam(param3, &val_ch3);
+            getIntegerParam(param4, &val_ch4); 
+        }
 
         switch (channel)
         {
@@ -322,6 +420,14 @@ void c400drv::sync_w_device()
     double res_DLO_ch2;
     double res_DLO_ch3;
     double res_DLO_ch4;
+    double res_HIVO_VOLTS_ch1;
+    double res_HIVO_VOLTS_ch2;
+    double res_HIVO_VOLTS_ch3;
+    double res_HIVO_VOLTS_ch4;
+    double res_HIVO_ENABLE_ch1;
+    double res_HIVO_ENABLE_ch2;
+    double res_HIVO_ENABLE_ch3;
+    double res_HIVO_ENABLE_ch4;
 
     // Get DAC val
     res_DAC_ch1 = get_channel_val(send_to_equipment(C400_MSG_DAC_ASK), 1);
@@ -347,7 +453,7 @@ void c400drv::sync_w_device()
     res_DHI_ch4 = get_channel_val(send_to_equipment(C400_MSG_DHI_ASK), 4);
     setDoubleParam (P_DHI4,          res_DHI_ch4);
 
-    // Get DHI val
+    // Get DLO val
     res_DLO_ch1 = get_channel_val(send_to_equipment(C400_MSG_DLO_ASK), 1);
     setDoubleParam (P_DLO1,          res_DLO_ch1);
     res_DLO_ch2 = get_channel_val(send_to_equipment(C400_MSG_DLO_ASK), 2);
@@ -356,6 +462,26 @@ void c400drv::sync_w_device()
     setDoubleParam (P_DLO3,          res_DLO_ch3);
     res_DLO_ch4 = get_channel_val(send_to_equipment(C400_MSG_DLO_ASK), 4);
     setDoubleParam (P_DLO4,          res_DLO_ch4);
+
+    // Get HIVO_VOLTS val
+    res_HIVO_VOLTS_ch1 = get_channel_val(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 1);
+    setDoubleParam (P_HIVO_VOLTS1,          res_HIVO_VOLTS_ch1);
+    res_HIVO_VOLTS_ch2 = get_channel_val(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 2);
+    setDoubleParam (P_HIVO_VOLTS2,          res_HIVO_VOLTS_ch2);
+    res_HIVO_VOLTS_ch3 = get_channel_val(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 3);
+    setDoubleParam (P_HIVO_VOLTS3,          res_HIVO_VOLTS_ch3);
+    res_HIVO_VOLTS_ch4 = get_channel_val(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 4);
+    setDoubleParam (P_HIVO_VOLTS4,          res_HIVO_VOLTS_ch4);
+
+    // Get HIVO_ENABLE val
+    res_HIVO_ENABLE_ch1 = get_channel_val(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 1, ",");
+    setIntegerParam (P_HIVO_ENABLE1,          res_HIVO_ENABLE_ch1);
+    res_HIVO_ENABLE_ch2 = get_channel_val(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 2, ",");
+    setIntegerParam (P_HIVO_ENABLE2,          res_HIVO_ENABLE_ch2);
+    res_HIVO_ENABLE_ch3 = get_channel_val(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 3, ",");
+    setIntegerParam (P_HIVO_ENABLE3,          res_HIVO_ENABLE_ch3);
+    res_HIVO_ENABLE_ch4 = get_channel_val(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 4, ",");
+    setIntegerParam (P_HIVO_ENABLE4,          res_HIVO_ENABLE_ch4);
 
 }
 

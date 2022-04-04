@@ -258,3 +258,151 @@ record(ao, "$(P)$(R)set_DLO_ch4")
    field(PREC, "5")
    field(EGU,"V")
 }
+
+record(ai, "$(P)$(R)get_HIVO_VOLTS_ch1")
+{
+   field(DESC,"Get HIVO_VOLTS for ch1")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_VOLTS1")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"V")
+}
+
+record(ai, "$(P)$(R)get_HIVO_VOLTS_ch2")
+{
+   field(DESC,"Get HIVO_VOLTS for ch2")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_VOLTS2")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"V")
+}
+
+record(ai, "$(P)$(R)get_HIVO_VOLTS_ch3")
+{
+   field(DESC,"Get HIVO_VOLTS for ch3")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_VOLTS3")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"V")
+}
+
+record(ai, "$(P)$(R)get_HIVO_VOLTS_ch4")
+{
+   field(DESC,"Get HIVO_VOLTS for ch4")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_VOLTS4")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"V")
+}
+
+record(ao, "$(P)$(R)set_HIVO_VOLTS_ch1")
+{
+   field(DESC,"Set HIVO_VOLTS for ch1")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_VOLTS1")
+   field(PREC, "5")
+   field(EGU,"V")
+}
+
+record(ao, "$(P)$(R)set_HIVO_VOLTS_ch2")
+{
+   field(DESC,"Set HIVO_VOLTS for ch2")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_VOLTS2")
+   field(PREC, "5")
+   field(EGU,"V")
+}
+
+record(ao, "$(P)$(R)set_HIVO_VOLTS_ch3")
+{
+   field(DESC,"Set HIVO_VOLTS for ch3")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_VOLTS3")
+   field(PREC, "5")
+   field(EGU,"V")
+}
+
+record(ao, "$(P)$(R)set_HIVO_VOLTS_ch4")
+{
+   field(DESC,"Set HIVO_VOLTS for ch4")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_VOLTS4")
+   field(PREC, "5")
+   field(EGU,"V")
+}
+
+record(bi, "$(P)$(R)HIVO_enable_ch1_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE1")
+    field(SCAN, "I/O Intr")
+    field(ZNAM, "0")
+    field(ONAM, "1")
+}
+
+record(bi, "$(P)$(R)HIVO_enable_ch2_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE2")
+    field(SCAN, "I/O Intr")
+    field(ZNAM, "0")
+    field(ONAM, "1")
+}
+
+record(bi, "$(P)$(R)HIVO_enable_ch3_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE3")
+    field(SCAN, "I/O Intr")
+    field(ZNAM, "0")
+    field(ONAM, "1")
+}
+
+record(bi, "$(P)$(R)HIVO_enable_ch4_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE4")
+    field(SCAN, "I/O Intr")
+    field(ZNAM, "0")
+    field(ONAM, "1")
+}
+
+record(bo, "$(P)$(R)HIVO_enable_ch1")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE1")
+    field(ZNAM, "0")
+    field(ONAM, "1")
+}
+
+record(bo, "$(P)$(R)HIVO_enable_ch2")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE2")
+    field(ZNAM, "0")
+    field(ONAM, "1")
+}
+
+record(bo, "$(P)$(R)HIVO_enable_ch3")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE3")
+    field(ZNAM, "0")
+    field(ONAM, "1")
+}
+
+record(bo, "$(P)$(R)HIVO_enable_ch4")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE4")
+    field(ZNAM, "0")
+    field(ONAM, "1")
+}
