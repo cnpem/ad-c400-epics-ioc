@@ -3,6 +3,10 @@
 /* These are the drvInfo strings that are used to identify the parameters.
  * They are used by asyn clients, including standard asyn device support */
 
+#define P_DACString1         "DAC1"         /* asynFloat64,  r/w */
+#define P_DACString2         "DAC2"         /* asynFloat64,  r/w */
+#define P_DACString3         "DAC3"         /* asynFloat64,  r/w */
+#define P_DACString4         "DAC4"         /* asynFloat64,  r/w */
 #define P_DHIString1         "DHI1"         /* asynFloat64,  r/w */
 #define P_DHIString2         "DHI2"         /* asynFloat64,  r/w */
 #define P_DHIString3         "DHI3"         /* asynFloat64,  r/w */
@@ -28,6 +32,10 @@ public:
     
 protected:
     /** Values used for pasynUser->reason, and indexes into the parameter library. */
+    int P_DAC1;
+    int P_DAC2;
+    int P_DAC3;
+    int P_DAC4;
     int P_DHI1;
     int P_DHI2;
     int P_DHI3;
@@ -37,6 +45,7 @@ private:
     asynUser *pasynUserEcho;
     float get_channel_val(std::string val, int channel);
     std::string send_to_equipment(const char *msg_ptr);
-    double set_voltage(int channel, double val);
+    double set_4_channels(int channel, double val);
+    double set_1_channel(int channel, double val);
     void sync_w_device();
 };

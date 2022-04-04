@@ -1,64 +1,160 @@
+record(ai, "$(P)$(R)get_DAC_ch1")
+{
+   field(DESC,"Get DAC for ch1")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DAC1")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"V")
+}
+
+record(ai, "$(P)$(R)get_DAC_ch2")
+{
+   field(DESC,"Get DAC for ch2")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DAC2")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"V")
+}
+
+record(ai, "$(P)$(R)get_DAC_ch3")
+{
+   field(DESC,"Get DAC for ch3")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DAC3")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"V")
+}
+
+record(ai, "$(P)$(R)get_DAC_ch4")
+{
+   field(DESC,"Get DAC for ch4")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DAC4")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"V")
+}
+
+
+record(ao, "$(P)$(R)set_DAC_ch1")
+{
+   field(DESC,"Set DAC for ch1")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DAC1")
+   field(PREC, "5")
+   field(EGU,"V")
+}
+
+record(ao, "$(P)$(R)set_DAC_ch2")
+{
+   field(DESC,"Set DAC for ch2")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DAC2")
+   field(PREC, "5")
+   field(EGU,"V")
+}
+
+record(ao, "$(P)$(R)set_DAC_ch3")
+{
+   field(DESC,"Set DAC for ch3")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DAC3")
+   field(PREC, "5")
+   field(EGU,"V")
+}
+
+record(ao, "$(P)$(R)set_DAC_ch4")
+{
+   field(DESC,"Set DAC for ch4")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DAC4")
+   field(PREC, "5")
+   field(EGU,"V")
+}
+
 record(ai, "$(P)$(R)get_DHI_ch1")
 {
+   field(DESC,"Get DHI for ch1")
    field(PINI, "1")
    field(DTYP, "asynFloat64")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DHI1")
    field(PREC, "5")
    field(SCAN, "I/O Intr")
+   field(EGU,"V")
 }
 
 record(ai, "$(P)$(R)get_DHI_ch2")
 {
+   field(DESC,"Get DHI for ch2")
    field(PINI, "1")
    field(DTYP, "asynFloat64")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DHI2")
    field(PREC, "5")
    field(SCAN, "I/O Intr")
+   field(EGU,"V")
 }
 
 record(ai, "$(P)$(R)get_DHI_ch3")
 {
+   field(DESC,"Get DHI for ch3")
    field(PINI, "1")
    field(DTYP, "asynFloat64")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DHI3")
    field(PREC, "5")
    field(SCAN, "I/O Intr")
+   field(EGU,"V")
 }
 
 record(ai, "$(P)$(R)get_DHI_ch4")
 {
+   field(DESC,"Get DHI for ch4")
    field(PINI, "1")
    field(DTYP, "asynFloat64")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DHI4")
    field(PREC, "5")
    field(SCAN, "I/O Intr")
+   field(EGU,"V")
 }
-
 
 record(ao, "$(P)$(R)set_DHI_ch1")
 {
+   field(DESC,"Set DHI for ch1")
    field(DTYP, "asynFloat64")
    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DHI1")
    field(PREC, "5")
+   field(EGU,"V")
 }
 
 record(ao, "$(P)$(R)set_DHI_ch2")
 {
+   field(DESC,"Set DHI for ch2")
    field(DTYP, "asynFloat64")
    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DHI2")
    field(PREC, "5")
+   field(EGU,"V")
 }
 
 record(ao, "$(P)$(R)set_DHI_ch3")
 {
+   field(DESC,"Set DHI for ch3")
    field(DTYP, "asynFloat64")
    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DHI3")
    field(PREC, "5")
+   field(EGU,"V")
 }
 
 record(ao, "$(P)$(R)set_DHI_ch4")
 {
+   field(DESC,"Set DHI for ch4")
    field(DTYP, "asynFloat64")
    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))DHI4")
    field(PREC, "5")
+   field(EGU,"V")
 }

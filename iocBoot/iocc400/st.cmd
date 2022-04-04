@@ -3,7 +3,7 @@
 #- You may have to change c400 to something else
 #- everywhere it appears in this file
 
-< /home/hugo/SOL/IOCs/c400/iocBoot/iocc400/envPaths
+< iocBoot/iocc400/envPaths
 
 cd "${TOP}"
 
