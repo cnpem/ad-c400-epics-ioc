@@ -94,7 +94,9 @@ private:
     float get_channel_val(std::string val, int channel, std::string search_for=" ", int size_sep=3);
     std::string send_to_equipment(const char *msg_ptr);
     double set_4_channels(const char *command_set, const char *command_ask, int param1, 
-                            int param2, int param3, int param4, int channel, double val, int is_float=1, int to_string=0);
+                            int param2, int param3, int param4, int channel, double val);
+    double set_4_channels_int(const char *command_set, const char *command_ask, int param1, 
+                            int param2, int param3, int param4, int channel, double val, int to_string=0);
     double set_2_vals(const char *command_set, const char *command_ask, int param1, 
                             int param2, int channel, double val, int is_float=1, int to_string=0);
     double set_direct(const char *command_set, const char *command_ask, int channel, double val);

@@ -567,8 +567,8 @@ record(bo, "$(P)$(R)Acquire")
 {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))Acquire")
-    field(ZNAM, "1")
-    field(ONAM, "0")
+    field(ZNAM, "0")
+    field(ONAM, "1")
 }
 
 record(ai, "$(P)$(R)BUFFER_size_RBV")

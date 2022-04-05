@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <math.h>
 #include <iostream>
+#include <unistd.h>
 
 //EPICS's includes
 #include <iocsh.h>
@@ -43,6 +44,7 @@
 #define C400_MSG_PULSER_ASK "CONFigure:PULser?"
 #define C400_MSG_PULSER_SET "CONFigure:PULser "
 #define C400_MSG_ACQUIRE_SET "INITiate"
+#define C400_MSG_ABORT_SET "ABORt"
 #define C400_MSG_BUFFER_ASK "TRIGger:BUFfer?"
 #define C400_MSG_BUFFER_SET "TRIGger:BUFfer "
 #define C400_MSG_BURST_ASK "TRIGger:BURst?"
@@ -119,47 +121,50 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
     getParamName(function, &paramName);
 
     if (function == P_HIVO_ENABLE1) {
-        result = set_4_channels(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
-                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 1, value, 0);
+        result = set_4_channels_int(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
+                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 1, value);
         setIntegerParam (P_HIVO_ENABLE1,      result);
     }
     else if (function == P_HIVO_ENABLE2){
-        result = set_4_channels(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
-                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 2, value, 0);
+        result = set_4_channels_int(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
+                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 2, value);
         setIntegerParam (P_HIVO_ENABLE2,      result);
     }
     else if (function == P_HIVO_ENABLE3){
-        result = set_4_channels(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
-                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 3, value, 0);
+        result = set_4_channels_int(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
+                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 3, value);
         setIntegerParam (P_HIVO_ENABLE3,      result);
     }
     else if (function == P_HIVO_ENABLE4){
-        result = set_4_channels(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
-                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 4, value, 0);
+        result = set_4_channels_int(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
+                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 4, value);
         setIntegerParam (P_HIVO_ENABLE4,      result);
     }
     else if (function == P_POLARITY1) {
-        result = set_4_channels(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
-                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 1, value, 0, 1);
+        result = set_4_channels_int(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
+                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 1, value, 1);
         setIntegerParam (P_POLARITY1,      result);
     }
     else if (function == P_POLARITY2){
-        result = set_4_channels(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
-                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 2, value, 0, 1);
+        result = set_4_channels_int(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
+                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 2, value, 1);
         setIntegerParam (P_POLARITY2,      result);
     }
     else if (function == P_POLARITY3){
-        result = set_4_channels(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
-                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 3, value, 0, 1);
+        result = set_4_channels_int(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
+                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 3, value, 1);
         setIntegerParam (P_POLARITY3,      result);
     }
     else if (function == P_POLARITY4){
-        result = set_4_channels(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
-                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 4, value, 0, 1);
+        result = set_4_channels_int(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
+                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 4, value, 1);
         setIntegerParam (P_POLARITY4,      result);
     }
     else if (function == P_ACQUIRE){
-        send_to_equipment(C400_MSG_ACQUIRE_SET);
+        if (value==1)
+            send_to_equipment(C400_MSG_ACQUIRE_SET);
+        else if (value==0)
+            send_to_equipment(C400_MSG_ABORT_SET);
         setIntegerParam (P_POLARITY4,      value);
     }
 
@@ -343,6 +348,7 @@ std::string c400drv::send_to_equipment(const char *writeBuffer)
                                      sizeof(readBuffer), TIMEOUT, &nActual, &nRead, &eomReason);
         if (status == 0)
             break;
+        sleep(.25);
     }
     std::cout << "status: " << status << std::endl;
     std::cout << "Buffer: " << readBuffer << std::endl;
@@ -417,7 +423,7 @@ double c400drv::set_direct(const char *command_set, const char *command_ask, int
 }
 
 double c400drv::set_4_channels(const char *command_set, const char *command_ask, int param1, int param2, 
-                               int param3, int param4, int channel, double val, int is_float, int to_string)
+                               int param3, int param4, int channel, double val)
 {
         asynStatus status = asynSuccess;
         double res;
@@ -433,23 +439,85 @@ double c400drv::set_4_channels(const char *command_set, const char *command_ask,
         std::string cmd_msg_read;
 
         // Check if the value to feed is a float or integer and handles it
-        if (is_float){
-            getDoubleParam(param1, &val_ch1);
-            getDoubleParam(param2, &val_ch2);
-            getDoubleParam(param3, &val_ch3);
-            getDoubleParam(param4, &val_ch4);
+
+        getDoubleParam(param1, &val_ch1);
+        getDoubleParam(param2, &val_ch2);
+        getDoubleParam(param3, &val_ch3);
+        getDoubleParam(param4, &val_ch4);
+        
+        std::cout << "val1: " << val_ch1 << std::endl;
+        std::cout << "val2: " << val_ch2 << std::endl;
+        std::cout << "val3: " << val_ch3 << std::endl;
+        std::cout << "val4: " << val_ch4 << std::endl;
+
+        switch (channel)
+        {
+            case 1:
+            str_val_ch1 = std::__cxx11::to_string(val);
+            str_val_ch2 = std::__cxx11::to_string(val_ch2);
+            str_val_ch3 = std::__cxx11::to_string(val_ch3);
+            str_val_ch4 = std::__cxx11::to_string(val_ch4);
+            break;
+
+            case 2:
+            str_val_ch1 = std::__cxx11::to_string(val_ch1);
+            str_val_ch2 = std::__cxx11::to_string(val);
+            str_val_ch3 = std::__cxx11::to_string(val_ch3);
+            str_val_ch4 = std::__cxx11::to_string(val_ch4);
+            break;
+            
+            case 3:
+            str_val_ch1 = std::__cxx11::to_string(val_ch1);
+            str_val_ch2 = std::__cxx11::to_string(val_ch2);
+            str_val_ch3 = std::__cxx11::to_string(val);
+            str_val_ch4 = std::__cxx11::to_string(val_ch4);
+            break;
+
+            case 4:
+            str_val_ch1 = std::__cxx11::to_string(val_ch1);
+            str_val_ch2 = std::__cxx11::to_string(val_ch2);
+            str_val_ch3 = std::__cxx11::to_string(val_ch3);
+            str_val_ch4 = std::__cxx11::to_string(val);
+            break;
         }
 
-        else{
-            int val_ch1;
-            int val_ch2;
-            int val_ch3;
-            int val_ch4;
-            getIntegerParam(param1, &val_ch1);
-            getIntegerParam(param2, &val_ch2);
-            getIntegerParam(param3, &val_ch3);
-            getIntegerParam(param4, &val_ch4); 
-        }
+        cmd_msg_send = command_set + str_val_ch1 + " " + str_val_ch2 + " "\
+                                        + str_val_ch3 + " " + str_val_ch4 + " ";
+        send_to_equipment(cmd_msg_send.c_str());
+        cmd_msg_read = command_ask;
+
+
+        res = get_channel_val(send_to_equipment(cmd_msg_read.c_str()), channel);
+
+        std::cout << "my res is: " << res << std::endl;
+        return res;
+}
+
+double c400drv::set_4_channels_int(const char *command_set, const char *command_ask, int param1, int param2, 
+                               int param3, int param4, int channel, double val, int to_string)
+{
+        asynStatus status = asynSuccess;
+        double res;
+        int val_ch1;
+        int val_ch2;
+        int val_ch3;
+        int val_ch4;
+        std::string str_val_ch1;
+        std::string str_val_ch2;
+        std::string str_val_ch3;
+        std::string str_val_ch4;
+        std::string cmd_msg_send;
+        std::string cmd_msg_read;
+
+        getIntegerParam(param1, &val_ch1);
+        getIntegerParam(param2, &val_ch2);
+        getIntegerParam(param3, &val_ch3);
+        getIntegerParam(param4, &val_ch4); 
+        
+        std::cout << "val1: " << val_ch1 << std::endl;
+        std::cout << "val2: " << val_ch2 << std::endl;
+        std::cout << "val3: " << val_ch3 << std::endl;
+        std::cout << "val4: " << val_ch4 << std::endl;
 
         switch (channel)
         {
@@ -508,11 +576,7 @@ double c400drv::set_4_channels(const char *command_set, const char *command_ask,
                                         + str_val_ch3 + " " + str_val_ch4 + " ";
         send_to_equipment(cmd_msg_send.c_str());
         cmd_msg_read = command_ask;
-
-        if (is_float)
-            res = get_channel_val(send_to_equipment(cmd_msg_read.c_str()), channel);
-        else
-            res = get_channel_val(send_to_equipment(cmd_msg_read.c_str()), channel, ",");
+        res = get_channel_val(send_to_equipment(cmd_msg_read.c_str()), channel, ",");
         std::cout << "my res is: " << res << std::endl;
         return res;
 }
@@ -672,7 +736,7 @@ void c400drv::sync_w_device()
     res_PERIOD = get_channel_val(send_to_equipment(C400_MSG_PERIOD_ASK), 1);
     setDoubleParam (P_PERIOD,          res_PERIOD);
 
-    // Get HIVO_ENABLE val
+    // Get HIVO Polarity val
     res_POLARITY_ch1 = get_channel_val(send_to_equipment(C400_MSG_POLARITY_ASK), 1, ",");
     setIntegerParam (P_POLARITY1,          res_POLARITY_ch1);
     res_POLARITY_ch2 = get_channel_val(send_to_equipment(C400_MSG_POLARITY_ASK), 2, ",");
