@@ -20,10 +20,20 @@
 #define P_HIVO_VOLTSString2         "HIVO_VOLTS2"         /* asynFloat64,  r/w */
 #define P_HIVO_VOLTSString3         "HIVO_VOLTS3"         /* asynFloat64,  r/w */
 #define P_HIVO_VOLTSString4         "HIVO_VOLTS4"         /* asynFloat64,  r/w */
-#define P_HIVO_ENABLEString1         "HIVO_ENABLE1"         /* asynFloat64,  r/w */
-#define P_HIVO_ENABLEString2         "HIVO_ENABLE2"         /* asynFloat64,  r/w */
-#define P_HIVO_ENABLEString3         "HIVO_ENABLE3"         /* asynFloat64,  r/w */
-#define P_HIVO_ENABLEString4         "HIVO_ENABLE4"         /* asynFloat64,  r/w */
+#define P_HIVO_ENABLEString1         "HIVO_ENABLE1"         /* asynInt32,    r/w */
+#define P_HIVO_ENABLEString2         "HIVO_ENABLE2"         /* asynInt32,    r/w */
+#define P_HIVO_ENABLEString3         "HIVO_ENABLE3"         /* asynInt32,    r/w */
+#define P_HIVO_ENABLEString4         "HIVO_ENABLE4"         /* asynInt32,    r/w */
+#define P_PERIODString                "PERIOD"         /* asynFloat64,  r/w */
+#define P_POLARITYString1         "POLARITY1"         /* asynInt32,    r/w */
+#define P_POLARITYString2         "POLARITY2"         /* asynInt32,    r/w */
+#define P_POLARITYString3         "POLARITY3"         /* asynInt32,    r/w */
+#define P_POLARITYString4         "POLARITY4"         /* asynInt32,    r/w */
+#define P_PULSER_PeriodString                "PULSER_Period"         /* asynFloat64,  r/w */
+#define P_PULSER_WidthString                "PULSER_Width"         /* asynFloat64,  r/w */
+#define P_ACQUIREString         "ACQUIRE"         /* asynInt32,    r/w */
+#define P_BUFFERString                "BUFFER"         /* asynFloat64,  r/w */
+#define P_BURSTString                "BURST"         /* asynFloat64,  r/w */
 
         /* asynFloat64,  r/w */
 // #define P_VertGainString           "SCOPE_VERT_GAIN"            /* asynFloat64,  r/w */
@@ -68,13 +78,25 @@ protected:
     int P_HIVO_ENABLE2;
     int P_HIVO_ENABLE3;
     int P_HIVO_ENABLE4;
+    int P_PERIOD;
+    int P_POLARITY1;
+    int P_POLARITY2;
+    int P_POLARITY3;
+    int P_POLARITY4;
+    int P_PULSER_Period;
+    int P_PULSER_Width;
+    int P_ACQUIRE;
+    int P_BUFFER;
+    int P_BURST;
 
 private:
     asynUser *pasynUserEcho;
-    float get_channel_val(std::string val, int channel, std::string search_for);
+    float get_channel_val(std::string val, int channel, std::string search_for=" ", int size_sep=3);
     std::string send_to_equipment(const char *msg_ptr);
     double set_4_channels(const char *command_set, const char *command_ask, int param1, 
-                            int param2, int param3, int param4, int channel, double val, int is_float);
+                            int param2, int param3, int param4, int channel, double val, int is_float=1, int to_string=0);
+    double set_2_vals(const char *command_set, const char *command_ask, int param1, 
+                            int param2, int channel, double val, int is_float=1, int to_string=0);
     double set_direct(const char *command_set, const char *command_ask, int channel, double val);
     void sync_w_device();
 };

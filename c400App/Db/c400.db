@@ -1,4 +1,4 @@
-record(ai, "$(P)$(R)get_DAC_ch1")
+record(ai, "$(P)$(R)DAC_ch1_RBV")
 {
    field(DESC,"Get DAC for ch1")
    field(PINI, "1")
@@ -9,7 +9,7 @@ record(ai, "$(P)$(R)get_DAC_ch1")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_DAC_ch2")
+record(ai, "$(P)$(R)DAC_ch2_RBV")
 {
    field(DESC,"Get DAC for ch2")
    field(PINI, "1")
@@ -20,7 +20,7 @@ record(ai, "$(P)$(R)get_DAC_ch2")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_DAC_ch3")
+record(ai, "$(P)$(R)DAC_ch3_RBV")
 {
    field(DESC,"Get DAC for ch3")
    field(PINI, "1")
@@ -31,7 +31,7 @@ record(ai, "$(P)$(R)get_DAC_ch3")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_DAC_ch4")
+record(ai, "$(P)$(R)DAC_ch4_RBV")
 {
    field(DESC,"Get DAC for ch4")
    field(PINI, "1")
@@ -43,7 +43,7 @@ record(ai, "$(P)$(R)get_DAC_ch4")
 }
 
 
-record(ao, "$(P)$(R)set_DAC_ch1")
+record(ao, "$(P)$(R)DAC_ch1")
 {
    field(DESC,"Set DAC for ch1")
    field(DTYP, "asynFloat64")
@@ -52,7 +52,7 @@ record(ao, "$(P)$(R)set_DAC_ch1")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_DAC_ch2")
+record(ao, "$(P)$(R)DAC_ch2")
 {
    field(DESC,"Set DAC for ch2")
    field(DTYP, "asynFloat64")
@@ -61,7 +61,7 @@ record(ao, "$(P)$(R)set_DAC_ch2")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_DAC_ch3")
+record(ao, "$(P)$(R)DAC_ch3")
 {
    field(DESC,"Set DAC for ch3")
    field(DTYP, "asynFloat64")
@@ -70,7 +70,7 @@ record(ao, "$(P)$(R)set_DAC_ch3")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_DAC_ch4")
+record(ao, "$(P)$(R)DAC_ch4")
 {
    field(DESC,"Set DAC for ch4")
    field(DTYP, "asynFloat64")
@@ -79,7 +79,7 @@ record(ao, "$(P)$(R)set_DAC_ch4")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_DEAD_time")
+record(ai, "$(P)$(R)DEAD_time_RBV")
 {
    field(DESC,"Get DEAD time")
    field(PINI, "1")
@@ -90,7 +90,7 @@ record(ai, "$(P)$(R)get_DEAD_time")
    field(EGU,"s")
 }
 
-record(ao, "$(P)$(R)set_DEAD_time")
+record(ao, "$(P)$(R)DEAD_time")
 {
    field(DESC,"Set DEAD time")
    field(DTYP, "asynFloat64")
@@ -99,7 +99,7 @@ record(ao, "$(P)$(R)set_DEAD_time")
    field(EGU,"s")
 }
 
-record(ai, "$(P)$(R)get_DHI_ch1")
+record(ai, "$(P)$(R)DHI_ch1_RBV")
 {
    field(DESC,"Get DHI for ch1")
    field(PINI, "1")
@@ -110,7 +110,7 @@ record(ai, "$(P)$(R)get_DHI_ch1")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_DHI_ch2")
+record(ai, "$(P)$(R)DHI_ch2_RBV")
 {
    field(DESC,"Get DHI for ch2")
    field(PINI, "1")
@@ -121,7 +121,7 @@ record(ai, "$(P)$(R)get_DHI_ch2")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_DHI_ch3")
+record(ai, "$(P)$(R)DHI_ch3_RBV")
 {
    field(DESC,"Get DHI for ch3")
    field(PINI, "1")
@@ -132,7 +132,7 @@ record(ai, "$(P)$(R)get_DHI_ch3")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_DHI_ch4")
+record(ai, "$(P)$(R)DHI_ch4_RBV")
 {
    field(DESC,"Get DHI for ch4")
    field(PINI, "1")
@@ -143,7 +143,7 @@ record(ai, "$(P)$(R)get_DHI_ch4")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_DHI_ch1")
+record(ao, "$(P)$(R)DHI_ch1")
 {
    field(DESC,"Set DHI for ch1")
    field(DTYP, "asynFloat64")
@@ -152,7 +152,7 @@ record(ao, "$(P)$(R)set_DHI_ch1")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_DHI_ch2")
+record(ao, "$(P)$(R)DHI_ch2")
 {
    field(DESC,"Set DHI for ch2")
    field(DTYP, "asynFloat64")
@@ -161,7 +161,7 @@ record(ao, "$(P)$(R)set_DHI_ch2")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_DHI_ch3")
+record(ao, "$(P)$(R)DHI_ch3")
 {
    field(DESC,"Set DHI for ch3")
    field(DTYP, "asynFloat64")
@@ -170,7 +170,7 @@ record(ao, "$(P)$(R)set_DHI_ch3")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_DHI_ch4")
+record(ao, "$(P)$(R)DHI_ch4")
 {
    field(DESC,"Set DHI for ch4")
    field(DTYP, "asynFloat64")
@@ -179,7 +179,7 @@ record(ao, "$(P)$(R)set_DHI_ch4")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_DLO_ch1")
+record(ai, "$(P)$(R)DLO_ch1_RBV")
 {
    field(DESC,"Get DLO for ch1")
    field(PINI, "1")
@@ -190,7 +190,7 @@ record(ai, "$(P)$(R)get_DLO_ch1")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_DLO_ch2")
+record(ai, "$(P)$(R)DLO_ch2_RBV")
 {
    field(DESC,"Get DLO for ch2")
    field(PINI, "1")
@@ -201,7 +201,7 @@ record(ai, "$(P)$(R)get_DLO_ch2")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_DLO_ch3")
+record(ai, "$(P)$(R)DLO_ch3_RBV")
 {
    field(DESC,"Get DLO for ch3")
    field(PINI, "1")
@@ -212,7 +212,7 @@ record(ai, "$(P)$(R)get_DLO_ch3")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_DLO_ch4")
+record(ai, "$(P)$(R)DLO_ch4_RBV")
 {
    field(DESC,"Get DLO for ch4")
    field(PINI, "1")
@@ -223,7 +223,7 @@ record(ai, "$(P)$(R)get_DLO_ch4")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_DLO_ch1")
+record(ao, "$(P)$(R)DLO_ch1")
 {
    field(DESC,"Set DLO for ch1")
    field(DTYP, "asynFloat64")
@@ -232,7 +232,7 @@ record(ao, "$(P)$(R)set_DLO_ch1")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_DLO_ch2")
+record(ao, "$(P)$(R)DLO_ch2")
 {
    field(DESC,"Set DLO for ch2")
    field(DTYP, "asynFloat64")
@@ -241,7 +241,7 @@ record(ao, "$(P)$(R)set_DLO_ch2")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_DLO_ch3")
+record(ao, "$(P)$(R)DLO_ch3")
 {
    field(DESC,"Set DLO for ch3")
    field(DTYP, "asynFloat64")
@@ -250,7 +250,7 @@ record(ao, "$(P)$(R)set_DLO_ch3")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_DLO_ch4")
+record(ao, "$(P)$(R)DLO_ch4")
 {
    field(DESC,"Set DLO for ch4")
    field(DTYP, "asynFloat64")
@@ -259,7 +259,7 @@ record(ao, "$(P)$(R)set_DLO_ch4")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_HIVO_VOLTS_ch1")
+record(ai, "$(P)$(R)HIVO_VOLTS_ch1_RBV")
 {
    field(DESC,"Get HIVO_VOLTS for ch1")
    field(PINI, "1")
@@ -270,7 +270,7 @@ record(ai, "$(P)$(R)get_HIVO_VOLTS_ch1")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_HIVO_VOLTS_ch2")
+record(ai, "$(P)$(R)HIVO_VOLTS_ch2_RBV")
 {
    field(DESC,"Get HIVO_VOLTS for ch2")
    field(PINI, "1")
@@ -281,7 +281,7 @@ record(ai, "$(P)$(R)get_HIVO_VOLTS_ch2")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_HIVO_VOLTS_ch3")
+record(ai, "$(P)$(R)HIVO_VOLTS_ch3_RBV")
 {
    field(DESC,"Get HIVO_VOLTS for ch3")
    field(PINI, "1")
@@ -292,7 +292,7 @@ record(ai, "$(P)$(R)get_HIVO_VOLTS_ch3")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)get_HIVO_VOLTS_ch4")
+record(ai, "$(P)$(R)HIVO_VOLTS_ch4_RBV")
 {
    field(DESC,"Get HIVO_VOLTS for ch4")
    field(PINI, "1")
@@ -303,7 +303,7 @@ record(ai, "$(P)$(R)get_HIVO_VOLTS_ch4")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_HIVO_VOLTS_ch1")
+record(ao, "$(P)$(R)HIVO_VOLTS_ch1")
 {
    field(DESC,"Set HIVO_VOLTS for ch1")
    field(DTYP, "asynFloat64")
@@ -312,7 +312,7 @@ record(ao, "$(P)$(R)set_HIVO_VOLTS_ch1")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_HIVO_VOLTS_ch2")
+record(ao, "$(P)$(R)HIVO_VOLTS_ch2")
 {
    field(DESC,"Set HIVO_VOLTS for ch2")
    field(DTYP, "asynFloat64")
@@ -321,7 +321,7 @@ record(ao, "$(P)$(R)set_HIVO_VOLTS_ch2")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_HIVO_VOLTS_ch3")
+record(ao, "$(P)$(R)HIVO_VOLTS_ch3")
 {
    field(DESC,"Set HIVO_VOLTS for ch3")
    field(DTYP, "asynFloat64")
@@ -330,7 +330,7 @@ record(ao, "$(P)$(R)set_HIVO_VOLTS_ch3")
    field(EGU,"V")
 }
 
-record(ao, "$(P)$(R)set_HIVO_VOLTS_ch4")
+record(ao, "$(P)$(R)HIVO_VOLTS_ch4")
 {
    field(DESC,"Set HIVO_VOLTS for ch4")
    field(DTYP, "asynFloat64")
@@ -405,4 +405,208 @@ record(bo, "$(P)$(R)HIVO_enable_ch4")
     field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE4")
     field(ZNAM, "0")
     field(ONAM, "1")
+}
+
+record(ai, "$(P)$(R)PERIOD_RBV")
+{
+   field(DESC,"Get PERIOD time")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PERIOD")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"s")
+}
+
+record(ao, "$(P)$(R)PERIOD")
+{
+   field(DESC,"Set PERIOD time")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PERIOD")
+   field(PREC, "5")
+   field(EGU,"s")
+}
+
+record(bi, "$(P)$(R)POLARITY_ch1_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))POLARITY1")
+    field(SCAN, "I/O Intr")
+    field(ZNAM, "N")
+    field(ONAM, "P")
+}
+
+record(bi, "$(P)$(R)POLARITY_ch2_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))POLARITY2")
+    field(SCAN, "I/O Intr")
+    field(ZNAM, "N")
+    field(ONAM, "P")
+}
+
+record(bi, "$(P)$(R)POLARITY_ch3_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))POLARITY3")
+    field(SCAN, "I/O Intr")
+    field(ZNAM, "N")
+    field(ONAM, "P")
+}
+
+record(bi, "$(P)$(R)POLARITY_ch4_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))POLARITY4")
+    field(SCAN, "I/O Intr")
+    field(ZNAM, "N")
+    field(ONAM, "P")
+}
+
+record(bo, "$(P)$(R)POLARITY_ch1")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))POLARITY1")
+    field(ZNAM, "N")
+    field(ONAM, "P")
+    field(FLNK, "$(P)$(R)POLARITY_ch1_fanout PP MS")
+}
+
+record(bo, "$(P)$(R)POLARITY_ch2")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))POLARITY2")
+    field(ZNAM, "N")
+    field(ONAM, "P")
+    field(FLNK, "$(P)$(R)POLARITY_ch2_fanout PP MS")
+}
+
+record(bo, "$(P)$(R)POLARITY_ch3")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))POLARITY3")
+    field(ZNAM, "N")
+    field(ONAM, "P")
+    field(FLNK, "$(P)$(R)POLARITY_ch3_fanout PP MS")
+}
+
+record(bo, "$(P)$(R)POLARITY_ch4")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))POLARITY4")
+    field(ZNAM, "N")
+    field(ONAM, "P")
+    field(FLNK, "$(P)$(R)POLARITY_ch4_fanout PP MS")
+}
+
+record(fanout, "$(P)$(R)POLARITY_ch1_fanout")
+{
+    field(LNK1, "$(P)$(R)DHI_ch1 PP MS")
+    field(LNK2, "$(P)$(R)DLO_ch1 PP MS")
+}
+
+record(fanout, "$(P)$(R)POLARITY_ch2_fanout")
+{
+    field(LNK1, "$(P)$(R)DHI_ch2 PP MS")
+    field(LNK2, "$(P)$(R)DLO_ch2 PP MS")
+}
+
+record(fanout, "$(P)$(R)POLARITY_ch3_fanout")
+{
+    field(LNK1, "$(P)$(R)DHI_ch3 PP MS")
+    field(LNK2, "$(P)$(R)DLO_ch3 PP MS")
+}
+
+record(fanout, "$(P)$(R)POLARITY_ch4_fanout")
+{
+    field(LNK1, "$(P)$(R)DHI_ch4 PP MS")
+    field(LNK2, "$(P)$(R)DLO_ch4 PP MS")
+}
+
+record(ai, "$(P)$(R)PULSER_Period_RBV")
+{
+   field(DESC,"Get PULSER Period")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PULSER_Period")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"ns")
+}
+
+record(ai, "$(P)$(R)PULSER_Width_RBV")
+{
+   field(DESC,"Get PULSER Width")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PULSER_Width")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   field(EGU,"ns")
+}
+
+record(ao, "$(P)$(R)PULSER_Period")
+{
+   field(DESC,"Set PULSER Period")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PULSER_Period")
+   field(PREC, "5")
+   field(EGU,"ns")
+}
+
+record(ao, "$(P)$(R)PULSER_Width")
+{
+   field(DESC,"Set PULSER Width")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PULSER_Width")
+   field(PREC, "5")
+   field(EGU,"ns")
+}
+
+record(bo, "$(P)$(R)Acquire")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))Acquire")
+    field(ZNAM, "1")
+    field(ONAM, "0")
+}
+
+record(ai, "$(P)$(R)BUFFER_size_RBV")
+{
+   field(DESC,"Get BUFFER size")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))BUFFER")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   #field(EGU,"s")
+}
+
+record(ao, "$(P)$(R)BUFFER_size")
+{
+   field(DESC,"Set BUFFER size")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))BUFFER")
+   field(PREC, "5")
+   #field(EGU,"s")
+}
+
+record(ai, "$(P)$(R)BURST_size_RBV")
+{
+   field(DESC,"Get BURST size")
+   field(PINI, "1")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))BURST")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   #field(EGU,"s")
+}
+
+record(ao, "$(P)$(R)BURST_size")
+{
+   field(DESC,"Set BURST size")
+   field(DTYP, "asynFloat64")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))BURST")
+   field(PREC, "5")
+   #field(EGU,"s")
 }
