@@ -20,12 +20,11 @@
 #include <asynPortDriver.h>
 #include "asynOctetSyncIO.h"
 
-//Luciole's includes
+//c400's includes
 #include "c400drv.h"
 #include <epicsExport.h>
 
 #define TIMEOUT 1.0
-
 #define C400_MSG_DAC_ASK "CONFigure:DAC?"
 #define C400_MSG_DAC_SET "CONFigure:DAC "
 #define C400_MSG_DEAD_ASK "CONFigure:DEADtime?"
@@ -51,16 +50,24 @@
 #define C400_MSG_BURST_ASK "TRIGger:BURst?"
 #define C400_MSG_BURST_SET "TRIGger:BURst "
 #define C400_MSG_COUNTS_ASK "FETch:COUNts?"
+#define C400_MSG_TRIGGER_MODE_ASK "TRIGger:MODE?"
+#define C400_MSG_TRIGGER_MODE_SET "TRIGger:MODE "
+#define C400_MSG_TRIGGER_POLARITY_ASK "TRIGger:POLarity?"
+#define C400_MSG_TRIGGER_POLARITY_SET "TRIGger:POLarity "
+#define C400_MSG_TRIGGER_START_ASK "TRIGger:SOURce:STARt?"
+#define C400_MSG_TRIGGER_START_SET "TRIGger:SOURce:STARt "
+#define C400_MSG_TRIGGER_STOP_ASK "TRIGger:SOURce:STOP?"
+#define C400_MSG_TRIGGER_STOP_SET "TRIGger:SOURce:STOP "
 
 void update_counts(void *drvPvt);
-
 static const char *driverName = "c400driver";
-
+static std::string trigger_mode_mbbo[]={"CUSTom", "INTernal", "EXTERNAL_START", "EXTERNAL_START_STOP",
+                                        "EXTERNAL_START_HOLD", "EXTERNAL_WINDOWED", "DISCRIMINATOR_SWEEP"};
 
 c400drv::c400drv(const char *portName, char *ip)
    : asynPortDriver(portName,
                     1, /* maxAddr */
-                    asynInt32Mask | asynFloat64Mask | asynDrvUserMask, /* Interface mask */
+                    asynInt32Mask | asynFloat64Mask | asynEnumMask | asynDrvUserMask, /* Interface mask */
                     asynInt32Mask | asynFloat64Mask | asynEnumMask,  /* Interrupt mask */
                     ASYN_CANBLOCK, /* asynFlags.  This driver does not block and it is not multi-device, so flag is 0 */
                     1, /* Autoconnect */
@@ -105,7 +112,10 @@ c400drv::c400drv(const char *portName, char *ip)
     createParam(P_COUNT2String, asynParamFloat64, &P_COUNT2);
     createParam(P_COUNT3String, asynParamFloat64, &P_COUNT3);
     createParam(P_COUNT4String, asynParamFloat64, &P_COUNT4);
-
+    createParam(P_TRIGGER_MODEString, asynParamInt32, &P_TRIGGER_MODE);
+    createParam(P_TRIGGER_POLARITYString, asynParamInt32, &P_TRIGGER_POLARITY);
+    createParam(P_TRIGGER_STARTString, asynParamInt32, &P_TRIGGER_START);
+    createParam(P_TRIGGER_STOPString, asynParamInt32, &P_TRIGGER_STOP);
 
     pasynOctetSyncIO->connect(ip, 0, &pasynUserEcho, NULL);
     pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
@@ -210,6 +220,22 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
         else if (value==0)
             send_to_equipment(C400_MSG_ABORT_SET);
         setIntegerParam (P_POLARITY4,      value);
+    }
+    else if (function == P_TRIGGER_MODE){
+        set_mbbo(C400_MSG_TRIGGER_MODE_SET, trigger_mode_mbbo, value);
+        setIntegerParam (P_TRIGGER_MODE,      value);
+    }
+    else if (function == P_TRIGGER_POLARITY){
+        result = set_direct(C400_MSG_TRIGGER_POLARITY_SET, C400_MSG_TRIGGER_POLARITY_ASK, 0, value);
+        setIntegerParam (P_TRIGGER_POLARITY,      result);
+    }
+    else if (function == P_TRIGGER_START){
+        result = set_direct(C400_MSG_TRIGGER_START_SET, C400_MSG_TRIGGER_START_ASK, 0, value);
+        setIntegerParam (P_TRIGGER_START,      result);
+    }
+    else if (function == P_TRIGGER_STOP){
+        result = set_direct(C400_MSG_TRIGGER_STOP_SET, C400_MSG_TRIGGER_STOP_ASK, 0, value);
+        setIntegerParam (P_TRIGGER_STOP,      result);
     }
 
     /* Do callbacks so higher layers see any changes */
@@ -426,7 +452,6 @@ float c400drv::get_parsed_response(std::string val, int n_element, std::string d
         return 0;
     }
 
-    std::cout << "Got: " << std::stof(result_array[n_element]) << std::endl;
     try{
         return std::stof(result_array[n_element]);
     }
@@ -441,10 +466,13 @@ double c400drv::set_direct(const char *command_set, const char *command_ask, int
 {
     // If 0 is passed to channel, them no specific channel is set
     double res;
+    std::string res_str;
     std::string str_channel;
     std::string str_val;
+    std::string token;
     std::string cmd_msg_send;
     std::string cmd_msg_read;
+
     str_channel = std::__cxx11::to_string(channel);
     str_val = std::__cxx11::to_string(val);
 
@@ -457,9 +485,33 @@ double c400drv::set_direct(const char *command_set, const char *command_ask, int
     }
 
     else{
+        if (command_set==C400_MSG_TRIGGER_START_SET or command_set==C400_MSG_TRIGGER_STOP_SET){
+            if (int(val)==0)
+                str_val = "INTernal";
+            else if (int(val)==1)
+                str_val = "BNC";
+        }
         cmd_msg_send =  command_set + str_val;
         send_to_equipment(cmd_msg_send.c_str());
-        return 0;
+        res_str = send_to_equipment(command_ask);
+        token = res_str.substr(0, res_str.find("\n")+1);
+        res_str = res_str.substr(token.length(), res_str.length() - token.length());
+        std::cout << res_str << std::endl;
+        
+        if (res_str=="INTernal")
+            return 0;
+        else if(res_str=="BNC")
+            return 1;
+
+        try{
+
+            return std::stof(res_str);
+        }
+        catch (...){
+            std::cout << "Error converting from str to float" << std::endl;
+            return 0;
+        }
+        
     }
 }
 
@@ -717,10 +769,10 @@ void c400drv::get_n_set_4_channels(const char *command_ask, int param1, int para
     result_array[array_idx] = val; //Append the last val
 
     try {
-    ch1_val = std::stof(result_array[n_param1]);
-    ch2_val = std::stof(result_array[n_param2]);
-    ch3_val = std::stof(result_array[n_param3]);
-    ch4_val = std::stof(result_array[n_param4]);
+        ch1_val = std::stof(result_array[n_param1]);
+        ch2_val = std::stof(result_array[n_param2]);
+        ch3_val = std::stof(result_array[n_param3]);
+        ch4_val = std::stof(result_array[n_param4]);
     }
 
     catch (...){
@@ -739,7 +791,15 @@ void c400drv::get_n_set_4_channels(const char *command_ask, int param1, int para
     setDoubleParam (param3,      ch3_val);
     setDoubleParam (param4,      ch4_val);
     callParamCallbacks();
-    // return std::stof(result_array[n_element]);
+}
+
+void c400drv::set_mbbo(const char *command_set, const std::string *mbbo_list, int mbbo_value)
+{
+    std::string cmd_msg_send;
+    std::cout << mbbo_list[mbbo_value] << std::endl;
+
+    cmd_msg_send = command_set + mbbo_list[mbbo_value];
+    send_to_equipment(cmd_msg_send.c_str());
 }
 
 void c400drv::sync_w_device()
@@ -867,6 +927,10 @@ void c400drv::sync_w_device()
     // Get BURST size
     res_BURST = get_parsed_response(send_to_equipment(C400_MSG_BURST_ASK), 1);
     setDoubleParam (P_BURST,          res_BURST);
+
+    //Set default TRIGGER MODE as internal
+    set_mbbo(C400_MSG_TRIGGER_MODE_SET, trigger_mode_mbbo, 1); 
+    setIntegerParam (P_TRIGGER_MODE,      1);
 }
 
 

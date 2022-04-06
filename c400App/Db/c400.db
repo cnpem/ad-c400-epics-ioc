@@ -650,3 +650,74 @@ record(ai, "$(P)$(R)count_ch4")
    field(SCAN, "I/O Intr")
    #field(EGU,"s")
 }
+
+record(mbbo, "$(P)$(R)TRIGGER_MODE")
+{
+   field(DTYP, "asynInt32")
+   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))TRIGGER_MODE")
+   field(ZRST, "CUSTom")
+   field(ZRVL, "0")
+   field(ONST, "INTernal")
+   field(ONVL, "1")
+   field(TWST, "EXTERNAL_START")
+   field(TWVL, "2")
+   field(THST, "EXTERNAL_START_STOP")
+   field(THVL, "3")
+   field(FRST, "EXTERNAL_START_HOLD")
+   field(FRVL, "4")
+   field(FVST, "EXTERNAL_WINDOWED")
+   field(FVVL, "5")
+   field(SXST, "DISCRIMINATOR_SWEEP")
+   field(SXVL, "6")
+}
+
+record(bi, "$(P)$(R)TRIGGER_POLARITY_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))TRIGGER_POLARITY")
+    field(SCAN, "I/O Intr")
+    field(ZNAM, "0")
+    field(ONAM, "1")
+}
+
+record(bo, "$(P)$(R)TRIGGER_POLARITY")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))TRIGGER_POLARITY")
+    field(ZNAM, "0")
+    field(ONAM, "1")
+}
+
+record(bi, "$(P)$(R)TRIGGER_START_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))TRIGGER_START")
+    field(SCAN, "I/O Intr")
+    field(ZNAM, "INTernal")
+    field(ONAM, "BNC")
+}
+
+record(bo, "$(P)$(R)TRIGGER_START")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))TRIGGER_START")
+    field(ZNAM, "INTernal")
+    field(ONAM, "BNC")
+}
+
+record(bi, "$(P)$(R)TRIGGER_STOP_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))TRIGGER_STOP")
+    field(SCAN, "I/O Intr")
+    field(ZNAM, "INTernal")
+    field(ONAM, "BNC")
+}
+
+record(bo, "$(P)$(R)TRIGGER_STOP")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))TRIGGER_STOP")
+    field(ZNAM, "INTernal")
+    field(ONAM, "BNC")
+}

@@ -38,7 +38,10 @@
 #define P_COUNT2String                "COUNT2"         /* asynFloat64,  r/o */
 #define P_COUNT3String                "COUNT3"         /* asynFloat64,  r/o */
 #define P_COUNT4String                "COUNT4"         /* asynFloat64,  r/o */
-
+#define P_TRIGGER_MODEString         "TRIGGER_MODE"         /* asynInt32,    r/w */
+#define P_TRIGGER_POLARITYString         "TRIGGER_POLARITY"         /* asynInt32,    r/w */
+#define P_TRIGGER_STARTString         "TRIGGER_START"         /* asynInt32,    r/w */
+#define P_TRIGGER_STOPString         "TRIGGER_STOP"         /* asynInt32,    r/w */
 
         /* asynFloat64,  r/w */
 // #define P_VertGainString           "SCOPE_VERT_GAIN"            /* asynFloat64,  r/w */
@@ -57,7 +60,6 @@ public:
     virtual asynStatus writeFloat64(asynUser *pasynUser, epicsFloat64 value);
     virtual asynStatus writeInt32(asynUser *pasynUser, epicsInt32 value);
     virtual asynStatus readFloat64(asynUser *pasynUser, epicsFloat64 *value);
-
 
     /* These are the methods that are new to this class */
     void update_counts();
@@ -99,6 +101,10 @@ protected:
     int P_COUNT2;
     int P_COUNT3;
     int P_COUNT4;
+    int P_TRIGGER_MODE;
+    int P_TRIGGER_POLARITY;
+    int P_TRIGGER_START;
+    int P_TRIGGER_STOP;
 
 private:
     asynUser *pasynUserEcho;
@@ -114,5 +120,6 @@ private:
     double set_direct(const char *command_set, const char *command_ask, int channel, double val);
     void get_n_set_4_channels(const char *command_ask, int param1, int param2, int param3, int param4, 
                                    int n_param1, int n_param2, int n_param3, int n_param4);
+    void set_mbbo(const char *command_set, const std::string *mbbo_list, int mbbo_value);
     void sync_w_device();
 };
