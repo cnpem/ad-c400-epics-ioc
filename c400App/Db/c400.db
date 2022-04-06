@@ -610,3 +610,43 @@ record(ao, "$(P)$(R)BURST_size")
    field(PREC, "5")
    #field(EGU,"s")
 }
+
+record(ai, "$(P)$(R)count_ch1")
+{
+   field(DESC,"Get ch1 count")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))COUNT1")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   #field(EGU,"s")
+}
+
+record(ai, "$(P)$(R)count_ch2")
+{
+   field(DESC,"Get ch2 count")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))COUNT2")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   #field(EGU,"s")
+}
+
+record(ai, "$(P)$(R)count_ch3")
+{
+   field(DESC,"Get ch3 count")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))COUNT3")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   #field(EGU,"s")
+}
+
+record(ai, "$(P)$(R)count_ch4")
+{
+   field(DESC,"Get ch4 count")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))COUNT4")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
+   #field(EGU,"s")
+}

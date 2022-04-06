@@ -7,13 +7,14 @@
 #include <unistd.h>
 
 //EPICS's includes
-#include <iocsh.h>
-#include <epicsExport.h>
-#include <registryFunction.h>
 #include <epicsTypes.h>
+#include <epicsTime.h>
+#include <epicsThread.h>
 #include <epicsString.h>
+#include <epicsTimer.h>
 #include <epicsMutex.h>
 #include <epicsEvent.h>
+#include <iocsh.h>
 
 //AsynPortDriver's includes
 #include <asynPortDriver.h>
@@ -49,7 +50,9 @@
 #define C400_MSG_BUFFER_SET "TRIGger:BUFfer "
 #define C400_MSG_BURST_ASK "TRIGger:BURst?"
 #define C400_MSG_BURST_SET "TRIGger:BURst "
+#define C400_MSG_COUNTS_ASK "FETch:COUNts?"
 
+void update_counts(void *drvPvt);
 
 static const char *driverName = "c400driver";
 
@@ -64,6 +67,9 @@ c400drv::c400drv(const char *portName, char *ip)
                     0, /* Default priority */
                     0) /* Default stack size*/
 {
+    asynStatus status;
+    const char *functionName = "c400drv";
+
     createParam(P_DACString1, asynParamFloat64, &P_DAC1);
     createParam(P_DACString2, asynParamFloat64, &P_DAC2);
     createParam(P_DACString3, asynParamFloat64, &P_DAC3);
@@ -95,17 +101,55 @@ c400drv::c400drv(const char *portName, char *ip)
     createParam(P_ACQUIREString, asynParamInt32, &P_ACQUIRE);
     createParam(P_BUFFERString, asynParamFloat64, &P_BUFFER);
     createParam(P_BURSTString, asynParamFloat64, &P_BURST);
+    createParam(P_COUNT1String, asynParamFloat64, &P_COUNT1);
+    createParam(P_COUNT2String, asynParamFloat64, &P_COUNT2);
+    createParam(P_COUNT3String, asynParamFloat64, &P_COUNT3);
+    createParam(P_COUNT4String, asynParamFloat64, &P_COUNT4);
+
 
     pasynOctetSyncIO->connect(ip, 0, &pasynUserEcho, NULL);
     pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
     pasynOctetSyncIO->setOutputEos(pasynUserEcho, "\n", strlen("\n"));
 
     sync_w_device();
+
+    status = (asynStatus)(epicsThreadCreate("c400countTask",
+                          epicsThreadPriorityMedium,
+                          epicsThreadGetStackSize(epicsThreadStackMedium),
+                          (EPICSTHREADFUNC)::update_counts,
+                          this) == NULL);
+    if (status) {
+        printf("%s:%s: epicsThreadCreate failure\n", driverName, functionName);
+        return;
+    }
     
 }
 
 
 //------------ asynPortDriver extended method ------------
+
+
+void update_counts(void *drvPvt)
+{
+    c400drv *pPvt = (c400drv *)drvPvt;
+
+    pPvt->update_counts();
+}
+
+void c400drv::update_counts(){
+    int is_counting;
+    double sleep_for;
+
+    while (true){
+        getIntegerParam(P_ACQUIRE, &is_counting);
+        getDoubleParam(P_PERIOD, &sleep_for);
+        if (is_counting){
+            get_n_set_4_channels(C400_MSG_COUNTS_ASK, P_COUNT1, P_COUNT2, 
+                                P_COUNT3, P_COUNT4, 2,3,4,5);
+        }
+        sleep(sleep_for);
+    }
+}
 
 asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
 {
@@ -348,53 +392,50 @@ std::string c400drv::send_to_equipment(const char *writeBuffer)
                                      sizeof(readBuffer), TIMEOUT, &nActual, &nRead, &eomReason);
         if (status == 0)
             break;
-        sleep(.25);
+        sleep(.1);
     }
     std::cout << "status: " << status << std::endl;
     std::cout << "Buffer: " << readBuffer << std::endl;
     return std::string (readBuffer);
 
 }
-float c400drv::get_channel_val(std::string val, int channel, std::string search_for, int size_sep)
+float c400drv::get_parsed_response(std::string val, int n_element, std::string delimiter)
 {
-    std::string parse = val;
-    std::string str_now;
-    int end;
-    int query_val;
-    int end_line = parse.find("\n", 0);
+    size_t pos = 0;
+    std::string token;
+    std::string result_array[15];
+    token = val.substr(0, val.find("\n")+1);
+    val = val.substr(token.length(), val.length() - token.length());
+    float res;
 
-    str_now = parse.substr(end_line + 1);
-    query_val = str_now.find(search_for, 0);
-    for(int i = 1; i < channel; i++)
-    {
-        query_val = str_now.find(search_for, 0);
-        if (search_for == " ")
-            str_now = str_now.substr(query_val + size_sep);
-        else if (search_for == ",")
-            str_now = str_now.substr(query_val + 1);
+    result_array[0] = token;
+    int array_idx = 1;
+    while ((pos = val.find(delimiter)) != std::string::npos) {
+        token = val.substr(0, pos);
+        result_array[array_idx] = token;
+        val.erase(0, pos + delimiter.length());
+        array_idx++;
     }
-
-    if (channel==3 and search_for==" ")
-        str_now = str_now.substr(0, query_val+1);
-    else
-        str_now = str_now.substr(0, query_val);
-
-    std::cout << "str_now is " << str_now << std::endl;
-
-    if (str_now.find("P") == 0)
+    result_array[array_idx] = val; //Append the last val
+    if (result_array[n_element] == "P"){
+        std::cout << "Got: " << "P" << std::endl;
         return 1;
-    else if (str_now.find("N") == 0)
-        return 0;
-
-    try {
-        return std::stof(str_now);
     }
-    
-    catch (const std::invalid_argument &e){
-        std::cerr << "Error " << e.what() << std::endl;
+    else if (result_array[n_element] == "N"){
+        std::cout << "Got: " << "N" << std::endl;
+        return 0;
+    }
+
+    std::cout << "Got: " << std::stof(result_array[n_element]) << std::endl;
+    try{
+        return std::stof(result_array[n_element]);
+    }
+    catch (...){
+        std::cout << "Error converting to float" << std::endl;
         return 0;
     }
 }
+
 
 double c400drv::set_direct(const char *command_set, const char *command_ask, int channel, double val)
 {
@@ -411,7 +452,7 @@ double c400drv::set_direct(const char *command_set, const char *command_ask, int
         cmd_msg_send =  command_set + str_channel + " " + str_val;
         send_to_equipment(cmd_msg_send.c_str());
         cmd_msg_read = command_ask;
-        res = get_channel_val(send_to_equipment(cmd_msg_read.c_str()), channel);
+        res = get_parsed_response(send_to_equipment(cmd_msg_read.c_str()), channel);
         return res;
     }
 
@@ -487,7 +528,7 @@ double c400drv::set_4_channels(const char *command_set, const char *command_ask,
         cmd_msg_read = command_ask;
 
 
-        res = get_channel_val(send_to_equipment(cmd_msg_read.c_str()), channel);
+        res = get_parsed_response(send_to_equipment(cmd_msg_read.c_str()), channel);
 
         std::cout << "my res is: " << res << std::endl;
         return res;
@@ -576,7 +617,7 @@ double c400drv::set_4_channels_int(const char *command_set, const char *command_
                                         + str_val_ch3 + " " + str_val_ch4 + " ";
         send_to_equipment(cmd_msg_send.c_str());
         cmd_msg_read = command_ask;
-        res = get_channel_val(send_to_equipment(cmd_msg_read.c_str()), channel, ",");
+        res = get_parsed_response(send_to_equipment(cmd_msg_read.c_str()), channel);
         std::cout << "my res is: " << res << std::endl;
         return res;
 }
@@ -638,11 +679,67 @@ double c400drv::set_2_vals(const char *command_set, const char *command_ask, int
         cmd_msg_read = command_ask;
 
         if (is_float)
-            res = get_channel_val(send_to_equipment(cmd_msg_read.c_str()), channel, " ", 4);
+            res = get_parsed_response(send_to_equipment(cmd_msg_read.c_str()), channel);
         else
-            res = get_channel_val(send_to_equipment(cmd_msg_read.c_str()), channel, ",", 4);
+            res = get_parsed_response(send_to_equipment(cmd_msg_read.c_str()), channel);
         std::cout << "my res is: " << res << std::endl;
         return res;
+}
+
+void c400drv::get_n_set_4_channels(const char *command_ask, int param1, int param2, int param3, int param4, 
+                                   int n_param1, int n_param2, int n_param3, int n_param4)
+{
+    std::string token;
+    std::string result_array[15];
+    std::string val;
+    std::string delimiter = ",";
+    // std::string cmd_msg_read;
+    double ch1_val;
+    double ch2_val;
+    double ch3_val;
+    double ch4_val;
+
+    size_t pos = 0;
+
+    val = send_to_equipment(command_ask);
+
+    token = val.substr(0, val.find("\n")+1);
+    val = val.substr(token.length(), val.length() - token.length());
+
+    result_array[0] = token;
+    int array_idx = 1;
+    while ((pos = val.find(delimiter)) != std::string::npos) {
+        token = val.substr(0, pos);
+        result_array[array_idx] = token;
+        val.erase(0, pos + delimiter.length());
+        array_idx++;
+    }
+    result_array[array_idx] = val; //Append the last val
+
+    try {
+    ch1_val = std::stof(result_array[n_param1]);
+    ch2_val = std::stof(result_array[n_param2]);
+    ch3_val = std::stof(result_array[n_param3]);
+    ch4_val = std::stof(result_array[n_param4]);
+    }
+
+    catch (...){
+        getDoubleParam (param1,      &ch1_val);
+        getDoubleParam (param2,      &ch2_val);
+        getDoubleParam (param3,      &ch3_val);
+        getDoubleParam (param4,      &ch4_val);;
+    }
+
+    std::cout << "ch1: " << ch1_val << std::endl;
+    std::cout << "ch2: " << ch2_val << std::endl;
+    std::cout << "ch3: " << ch3_val << std::endl;
+    std::cout << "ch4: " << ch4_val << std::endl;
+    setDoubleParam (param1,      ch1_val);
+    setDoubleParam (param2,      ch2_val);
+    setDoubleParam (param3,      ch3_val);
+    setDoubleParam (param4,      ch4_val);
+    callParamCallbacks();
+    // return std::stof(result_array[n_element]);
 }
 
 void c400drv::sync_w_device()
@@ -679,85 +776,96 @@ void c400drv::sync_w_device()
     double res_BURST;
 
     // Get DAC val
-    res_DAC_ch1 = get_channel_val(send_to_equipment(C400_MSG_DAC_ASK), 1);
-    setDoubleParam (P_DAC1,          res_DAC_ch1);
-    res_DAC_ch2 = get_channel_val(send_to_equipment(C400_MSG_DAC_ASK), 2);
-    setDoubleParam (P_DAC2,          res_DAC_ch2);
-    res_DAC_ch3 = get_channel_val(send_to_equipment(C400_MSG_DAC_ASK), 3);
-    setDoubleParam (P_DAC3,          res_DAC_ch3);
-    res_DAC_ch4 = get_channel_val(send_to_equipment(C400_MSG_DAC_ASK), 4);
-    setDoubleParam (P_DAC4,          res_DAC_ch4);
+    // res_DAC_ch1 = get_parsed_response(send_to_equipment(C400_MSG_DAC_ASK), 1);
+    // setDoubleParam (P_DAC1,          res_DAC_ch1);
+    // res_DAC_ch2 = get_parsed_response(send_to_equipment(C400_MSG_DAC_ASK), 2);
+    // setDoubleParam (P_DAC2,          res_DAC_ch2);
+    // res_DAC_ch3 = get_parsed_response(send_to_equipment(C400_MSG_DAC_ASK), 3);
+    // setDoubleParam (P_DAC3,          res_DAC_ch3);
+    // res_DAC_ch4 = get_parsed_response(send_to_equipment(C400_MSG_DAC_ASK), 4);
+    // setDoubleParam (P_DAC4,          res_DAC_ch4);
+    get_n_set_4_channels(C400_MSG_DAC_ASK, P_DAC1, P_DAC2, 
+                        P_DAC3, P_DAC4, 1,2,3,4);
 
     // Get DEAD time
-    res_DEAD = get_channel_val(send_to_equipment(C400_MSG_DEAD_ASK), 1);
+    res_DEAD = get_parsed_response(send_to_equipment(C400_MSG_DEAD_ASK), 1);
     setDoubleParam (P_DEAD,          res_DEAD);
 
     // Get DHI val
-    res_DHI_ch1 = get_channel_val(send_to_equipment(C400_MSG_DHI_ASK), 1);
-    setDoubleParam (P_DHI1,          res_DHI_ch1);
-    res_DHI_ch2 = get_channel_val(send_to_equipment(C400_MSG_DHI_ASK), 2);
-    setDoubleParam (P_DHI2,          res_DHI_ch2);
-    res_DHI_ch3 = get_channel_val(send_to_equipment(C400_MSG_DHI_ASK), 3);
-    setDoubleParam (P_DHI3,          res_DHI_ch3);
-    res_DHI_ch4 = get_channel_val(send_to_equipment(C400_MSG_DHI_ASK), 4);
-    setDoubleParam (P_DHI4,          res_DHI_ch4);
+    // res_DHI_ch1 = get_parsed_response(send_to_equipment(C400_MSG_DHI_ASK), 1);
+    // setDoubleParam (P_DHI1,          res_DHI_ch1);
+    // res_DHI_ch2 = get_parsed_response(send_to_equipment(C400_MSG_DHI_ASK), 2);
+    // setDoubleParam (P_DHI2,          res_DHI_ch2);
+    // res_DHI_ch3 = get_parsed_response(send_to_equipment(C400_MSG_DHI_ASK), 3);
+    // setDoubleParam (P_DHI3,          res_DHI_ch3);
+    // res_DHI_ch4 = get_parsed_response(send_to_equipment(C400_MSG_DHI_ASK), 4);
+    // setDoubleParam (P_DHI4,          res_DHI_ch4);
+    get_n_set_4_channels(C400_MSG_DHI_ASK, P_DHI1, P_DHI2, 
+                        P_DHI3, P_DHI4, 1,2,3,4);
 
     // Get DLO val
-    res_DLO_ch1 = get_channel_val(send_to_equipment(C400_MSG_DLO_ASK), 1);
-    setDoubleParam (P_DLO1,          res_DLO_ch1);
-    res_DLO_ch2 = get_channel_val(send_to_equipment(C400_MSG_DLO_ASK), 2);
-    setDoubleParam (P_DLO2,          res_DLO_ch2);
-    res_DLO_ch3 = get_channel_val(send_to_equipment(C400_MSG_DLO_ASK), 3);
-    setDoubleParam (P_DLO3,          res_DLO_ch3);
-    res_DLO_ch4 = get_channel_val(send_to_equipment(C400_MSG_DLO_ASK), 4);
-    setDoubleParam (P_DLO4,          res_DLO_ch4);
+    // res_DLO_ch1 = get_parsed_response(send_to_equipment(C400_MSG_DLO_ASK), 1);
+    // setDoubleParam (P_DLO1,          res_DLO_ch1);
+    // res_DLO_ch2 = get_parsed_response(send_to_equipment(C400_MSG_DLO_ASK), 2);
+    // setDoubleParam (P_DLO2,          res_DLO_ch2);
+    // res_DLO_ch3 = get_parsed_response(send_to_equipment(C400_MSG_DLO_ASK), 3);
+    // setDoubleParam (P_DLO3,          res_DLO_ch3);
+    // res_DLO_ch4 = get_parsed_response(send_to_equipment(C400_MSG_DLO_ASK), 4);
+    // setDoubleParam (P_DLO4,          res_DLO_ch4);
+    get_n_set_4_channels(C400_MSG_DLO_ASK, P_DLO1, P_DLO2, 
+                        P_DLO3, P_DLO4, 1,2,3,4);
+
 
     // Get HIVO_VOLTS val
-    res_HIVO_VOLTS_ch1 = get_channel_val(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 1);
-    setDoubleParam (P_HIVO_VOLTS1,          res_HIVO_VOLTS_ch1);
-    res_HIVO_VOLTS_ch2 = get_channel_val(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 2);
-    setDoubleParam (P_HIVO_VOLTS2,          res_HIVO_VOLTS_ch2);
-    res_HIVO_VOLTS_ch3 = get_channel_val(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 3);
-    setDoubleParam (P_HIVO_VOLTS3,          res_HIVO_VOLTS_ch3);
-    res_HIVO_VOLTS_ch4 = get_channel_val(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 4);
-    setDoubleParam (P_HIVO_VOLTS4,          res_HIVO_VOLTS_ch4);
+    // res_HIVO_VOLTS_ch1 = get_parsed_response(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 1);
+    // setDoubleParam (P_HIVO_VOLTS1,          res_HIVO_VOLTS_ch1);
+    // res_HIVO_VOLTS_ch2 = get_parsed_response(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 2);
+    // setDoubleParam (P_HIVO_VOLTS2,          res_HIVO_VOLTS_ch2);
+    // res_HIVO_VOLTS_ch3 = get_parsed_response(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 3);
+    // setDoubleParam (P_HIVO_VOLTS3,          res_HIVO_VOLTS_ch3);
+    // res_HIVO_VOLTS_ch4 = get_parsed_response(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 4);
+    // setDoubleParam (P_HIVO_VOLTS4,          res_HIVO_VOLTS_ch4);
+    get_n_set_4_channels(C400_MSG_HIVO_VOLTS_ASK, P_HIVO_VOLTS1, P_HIVO_VOLTS2, 
+                        P_HIVO_VOLTS3, P_HIVO_VOLTS4, 1,2,3,4);
 
     // Get HIVO_ENABLE val
-    res_HIVO_ENABLE_ch1 = get_channel_val(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 1, ",");
+    res_HIVO_ENABLE_ch1 = get_parsed_response(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 1);
     setIntegerParam (P_HIVO_ENABLE1,          res_HIVO_ENABLE_ch1);
-    res_HIVO_ENABLE_ch2 = get_channel_val(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 2, ",");
+    res_HIVO_ENABLE_ch2 = get_parsed_response(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 2);
     setIntegerParam (P_HIVO_ENABLE2,          res_HIVO_ENABLE_ch2);
-    res_HIVO_ENABLE_ch3 = get_channel_val(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 3, ",");
+    res_HIVO_ENABLE_ch3 = get_parsed_response(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 3);
     setIntegerParam (P_HIVO_ENABLE3,          res_HIVO_ENABLE_ch3);
-    res_HIVO_ENABLE_ch4 = get_channel_val(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 4, ",");
+    res_HIVO_ENABLE_ch4 = get_parsed_response(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 4);
     setIntegerParam (P_HIVO_ENABLE4,          res_HIVO_ENABLE_ch4);
+    // get_n_set_4_channels(C400_MSG_HIVO_ENABLE_ASK, P_HIVO_ENABLE1, P_HIVO_ENABLE2, 
+    //                     P_HIVO_ENABLE3, P_HIVO_ENABLE4, 1,2,3,4);
 
     // Get PERIOD time
-    res_PERIOD = get_channel_val(send_to_equipment(C400_MSG_PERIOD_ASK), 1);
+    res_PERIOD = get_parsed_response(send_to_equipment(C400_MSG_PERIOD_ASK), 1);
     setDoubleParam (P_PERIOD,          res_PERIOD);
 
     // Get HIVO Polarity val
-    res_POLARITY_ch1 = get_channel_val(send_to_equipment(C400_MSG_POLARITY_ASK), 1, ",");
+    res_POLARITY_ch1 = get_parsed_response(send_to_equipment(C400_MSG_POLARITY_ASK), 1);
     setIntegerParam (P_POLARITY1,          res_POLARITY_ch1);
-    res_POLARITY_ch2 = get_channel_val(send_to_equipment(C400_MSG_POLARITY_ASK), 2, ",");
+    res_POLARITY_ch2 = get_parsed_response(send_to_equipment(C400_MSG_POLARITY_ASK), 2);
     setIntegerParam (P_POLARITY2,          res_POLARITY_ch2);
-    res_POLARITY_ch3 = get_channel_val(send_to_equipment(C400_MSG_POLARITY_ASK), 3, ",");
+    res_POLARITY_ch3 = get_parsed_response(send_to_equipment(C400_MSG_POLARITY_ASK), 3);
     setIntegerParam (P_POLARITY3,          res_POLARITY_ch3);
-    res_POLARITY_ch4 = get_channel_val(send_to_equipment(C400_MSG_POLARITY_ASK), 4, ",");
+    res_POLARITY_ch4 = get_parsed_response(send_to_equipment(C400_MSG_POLARITY_ASK), 4);
     setIntegerParam (P_POLARITY4,          res_POLARITY_ch4);
 
     // Get PULSER vals
-    res_PULSER_Period = get_channel_val(send_to_equipment(C400_MSG_PULSER_ASK), 1, " ", 4);
+    res_PULSER_Period = get_parsed_response(send_to_equipment(C400_MSG_PULSER_ASK), 1);
     setDoubleParam (P_PULSER_Period,          res_PULSER_Period);
-    res_PULSER_Width = get_channel_val(send_to_equipment(C400_MSG_PULSER_ASK), 2, " ", 4);
+    res_PULSER_Width = get_parsed_response(send_to_equipment(C400_MSG_PULSER_ASK), 2);
     setDoubleParam (P_PULSER_Width,          res_PULSER_Width);
 
     // Get BUFFER size
-    res_BUFFER = get_channel_val(send_to_equipment(C400_MSG_BUFFER_ASK), 1);
+    res_BUFFER = get_parsed_response(send_to_equipment(C400_MSG_BUFFER_ASK), 1);
     setDoubleParam (P_BUFFER,          res_BUFFER);
 
     // Get BURST size
-    res_BURST = get_channel_val(send_to_equipment(C400_MSG_BURST_ASK), 1);
+    res_BURST = get_parsed_response(send_to_equipment(C400_MSG_BURST_ASK), 1);
     setDoubleParam (P_BURST,          res_BURST);
 }
 
