@@ -79,7 +79,7 @@ record(ao, "$(P)$(R)DAC_ch4")
    field(EGU,"V")
 }
 
-record(ai, "$(P)$(R)DEAD_time_RBV")
+record(ai, "$(P)$(R)DEAD_TIME_RBV")
 {
    field(DESC,"Get DEAD time")
    field(PINI, "1")
@@ -90,7 +90,7 @@ record(ai, "$(P)$(R)DEAD_time_RBV")
    field(EGU,"s")
 }
 
-record(ao, "$(P)$(R)DEAD_time")
+record(ao, "$(P)$(R)DEAD_TIME")
 {
    field(DESC,"Set DEAD time")
    field(DTYP, "asynFloat64")
@@ -339,7 +339,7 @@ record(ao, "$(P)$(R)HIVO_VOLTS_ch4")
    field(EGU,"V")
 }
 
-record(bi, "$(P)$(R)HIVO_enable_ch1_RBV")
+record(bi, "$(P)$(R)HIVO_ENABLE_ch1_RBV")
 {
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE1")
@@ -348,7 +348,7 @@ record(bi, "$(P)$(R)HIVO_enable_ch1_RBV")
     field(ONAM, "1")
 }
 
-record(bi, "$(P)$(R)HIVO_enable_ch2_RBV")
+record(bi, "$(P)$(R)HIVO_ENABLE_ch2_RBV")
 {
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE2")
@@ -357,7 +357,7 @@ record(bi, "$(P)$(R)HIVO_enable_ch2_RBV")
     field(ONAM, "1")
 }
 
-record(bi, "$(P)$(R)HIVO_enable_ch3_RBV")
+record(bi, "$(P)$(R)HIVO_ENABLE_ch3_RBV")
 {
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE3")
@@ -366,7 +366,7 @@ record(bi, "$(P)$(R)HIVO_enable_ch3_RBV")
     field(ONAM, "1")
 }
 
-record(bi, "$(P)$(R)HIVO_enable_ch4_RBV")
+record(bi, "$(P)$(R)HIVO_ENABLE_ch4_RBV")
 {
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE4")
@@ -375,7 +375,7 @@ record(bi, "$(P)$(R)HIVO_enable_ch4_RBV")
     field(ONAM, "1")
 }
 
-record(bo, "$(P)$(R)HIVO_enable_ch1")
+record(bo, "$(P)$(R)HIVO_ENABLE_ch1")
 {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE1")
@@ -383,7 +383,7 @@ record(bo, "$(P)$(R)HIVO_enable_ch1")
     field(ONAM, "1")
 }
 
-record(bo, "$(P)$(R)HIVO_enable_ch2")
+record(bo, "$(P)$(R)HIVO_ENABLE_ch2")
 {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE2")
@@ -391,7 +391,7 @@ record(bo, "$(P)$(R)HIVO_enable_ch2")
     field(ONAM, "1")
 }
 
-record(bo, "$(P)$(R)HIVO_enable_ch3")
+record(bo, "$(P)$(R)HIVO_ENABLE_ch3")
 {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE3")
@@ -399,7 +399,7 @@ record(bo, "$(P)$(R)HIVO_enable_ch3")
     field(ONAM, "1")
 }
 
-record(bo, "$(P)$(R)HIVO_enable_ch4")
+record(bo, "$(P)$(R)HIVO_ENABLE_ch4")
 {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))HIVO_ENABLE4")
@@ -523,7 +523,7 @@ record(fanout, "$(P)$(R)POLARITY_ch4_fanout")
     field(LNK2, "$(P)$(R)DLO_ch4 PP MS")
 }
 
-record(ai, "$(P)$(R)PULSER_Period_RBV")
+record(ai, "$(P)$(R)PULSER_PERIOD_RBV")
 {
    field(DESC,"Get PULSER Period")
    field(PINI, "1")
@@ -534,7 +534,7 @@ record(ai, "$(P)$(R)PULSER_Period_RBV")
    field(EGU,"ns")
 }
 
-record(ai, "$(P)$(R)PULSER_Width_RBV")
+record(ai, "$(P)$(R)PULSER_WIDTH_RBV")
 {
    field(DESC,"Get PULSER Width")
    field(PINI, "1")
@@ -545,7 +545,7 @@ record(ai, "$(P)$(R)PULSER_Width_RBV")
    field(EGU,"ns")
 }
 
-record(ao, "$(P)$(R)PULSER_Period")
+record(ao, "$(P)$(R)PULSER_PERIOD")
 {
    field(DESC,"Set PULSER Period")
    field(DTYP, "asynFloat64")
@@ -554,7 +554,7 @@ record(ao, "$(P)$(R)PULSER_Period")
    field(EGU,"ns")
 }
 
-record(ao, "$(P)$(R)PULSER_Width")
+record(ao, "$(P)$(R)PULSER_WIDTH")
 {
    field(DESC,"Set PULSER Width")
    field(DTYP, "asynFloat64")
@@ -563,7 +563,7 @@ record(ao, "$(P)$(R)PULSER_Width")
    field(EGU,"ns")
 }
 
-record(bo, "$(P)$(R)Acquire")
+record(bo, "$(P)$(R)ACQUIRE")
 {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))Acquire")
@@ -571,7 +571,7 @@ record(bo, "$(P)$(R)Acquire")
     field(ONAM, "1")
 }
 
-record(ai, "$(P)$(R)BUFFER_size_RBV")
+record(ai, "$(P)$(R)BUFFER_SIZE_RBV")
 {
    field(DESC,"Get BUFFER size")
    field(PINI, "1")
@@ -582,7 +582,7 @@ record(ai, "$(P)$(R)BUFFER_size_RBV")
    #field(EGU,"s")
 }
 
-record(ao, "$(P)$(R)BUFFER_size")
+record(ao, "$(P)$(R)BUFFER_SIZE")
 {
    field(DESC,"Set BUFFER size")
    field(DTYP, "asynFloat64")
@@ -591,7 +591,7 @@ record(ao, "$(P)$(R)BUFFER_size")
    #field(EGU,"s")
 }
 
-record(ai, "$(P)$(R)BURST_size_RBV")
+record(ai, "$(P)$(R)BURST_SIZE_RBV")
 {
    field(DESC,"Get BURST size")
    field(PINI, "1")
@@ -602,7 +602,7 @@ record(ai, "$(P)$(R)BURST_size_RBV")
    #field(EGU,"s")
 }
 
-record(ao, "$(P)$(R)BURST_size")
+record(ao, "$(P)$(R)BURST_SIZE")
 {
    field(DESC,"Set BURST size")
    field(DTYP, "asynFloat64")
@@ -611,7 +611,7 @@ record(ao, "$(P)$(R)BURST_size")
    #field(EGU,"s")
 }
 
-record(ai, "$(P)$(R)count_ch1")
+record(ai, "$(P)$(R)COUNT_ch1")
 {
    field(DESC,"Get ch1 count")
    field(DTYP, "asynFloat64")
@@ -621,7 +621,7 @@ record(ai, "$(P)$(R)count_ch1")
    #field(EGU,"s")
 }
 
-record(ai, "$(P)$(R)count_ch2")
+record(ai, "$(P)$(R)COUNT_ch2")
 {
    field(DESC,"Get ch2 count")
    field(DTYP, "asynFloat64")
@@ -631,7 +631,7 @@ record(ai, "$(P)$(R)count_ch2")
    #field(EGU,"s")
 }
 
-record(ai, "$(P)$(R)count_ch3")
+record(ai, "$(P)$(R)COUNT_ch3")
 {
    field(DESC,"Get ch3 count")
    field(DTYP, "asynFloat64")
@@ -641,7 +641,7 @@ record(ai, "$(P)$(R)count_ch3")
    #field(EGU,"s")
 }
 
-record(ai, "$(P)$(R)count_ch4")
+record(ai, "$(P)$(R)COUNT_ch4")
 {
    field(DESC,"Get ch4 count")
    field(DTYP, "asynFloat64")

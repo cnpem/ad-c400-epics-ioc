@@ -931,6 +931,13 @@ void c400drv::sync_w_device()
     //Set default TRIGGER MODE as internal
     set_mbbo(C400_MSG_TRIGGER_MODE_SET, trigger_mode_mbbo, 1); 
     setIntegerParam (P_TRIGGER_MODE,      1);
+
+    //Set counter to 0 as default
+    setDoubleParam (P_COUNT1,          0);
+    setDoubleParam (P_COUNT2,          0);
+    setDoubleParam (P_COUNT3,          0);
+    setDoubleParam (P_COUNT4,          0);
+    
 }
 
 
