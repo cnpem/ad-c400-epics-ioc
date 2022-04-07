@@ -219,7 +219,7 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
             send_to_equipment(C400_MSG_ACQUIRE_SET);
         else if (value==0)
             send_to_equipment(C400_MSG_ABORT_SET);
-        setIntegerParam (P_POLARITY4,      value);
+        setIntegerParam (P_ACQUIRE,      value);
     }
     else if (function == P_TRIGGER_MODE){
         set_mbbo(C400_MSG_TRIGGER_MODE_SET, trigger_mode_mbbo, value);
