@@ -3,45 +3,45 @@
 /* These are the drvInfo strings that are used to identify the parameters.
  * They are used by asyn clients, including standard asyn device support */
 
-#define P_DACString1                "DAC1"         /* asynFloat64,  r/w */
-#define P_DACString2                "DAC2"         /* asynFloat64,  r/w */
-#define P_DACString3                "DAC3"         /* asynFloat64,  r/w */
-#define P_DACString4                "DAC4"         /* asynFloat64,  r/w */
-#define P_DEADString                "DEAD"         /* asynFloat64,  r/w */
-#define P_DHIString1                "DHI1"         /* asynFloat64,  r/w */
-#define P_DHIString2                "DHI2"         /* asynFloat64,  r/w */
-#define P_DHIString3                "DHI3"         /* asynFloat64,  r/w */
-#define P_DHIString4                "DHI4"         /* asynFloat64,  r/w */
-#define P_DLOString1                "DLO1"         /* asynFloat64,  r/w */
-#define P_DLOString2                "DLO2"         /* asynFloat64,  r/w */
-#define P_DLOString3                "DLO3"         /* asynFloat64,  r/w */
-#define P_DLOString4                "DLO4"         /* asynFloat64,  r/w */
-#define P_HIVO_VOLTSString1         "HIVO_VOLTS1"         /* asynFloat64,  r/w */
-#define P_HIVO_VOLTSString2         "HIVO_VOLTS2"         /* asynFloat64,  r/w */
-#define P_HIVO_VOLTSString3         "HIVO_VOLTS3"         /* asynFloat64,  r/w */
-#define P_HIVO_VOLTSString4         "HIVO_VOLTS4"         /* asynFloat64,  r/w */
-#define P_HIVO_ENABLEString1         "HIVO_ENABLE1"         /* asynInt32,    r/w */
-#define P_HIVO_ENABLEString2         "HIVO_ENABLE2"         /* asynInt32,    r/w */
-#define P_HIVO_ENABLEString3         "HIVO_ENABLE3"         /* asynInt32,    r/w */
-#define P_HIVO_ENABLEString4         "HIVO_ENABLE4"         /* asynInt32,    r/w */
-#define P_PERIODString                "PERIOD"         /* asynFloat64,  r/w */
-#define P_POLARITYString1         "POLARITY1"         /* asynInt32,    r/w */
-#define P_POLARITYString2         "POLARITY2"         /* asynInt32,    r/w */
-#define P_POLARITYString3         "POLARITY3"         /* asynInt32,    r/w */
-#define P_POLARITYString4         "POLARITY4"         /* asynInt32,    r/w */
-#define P_PULSER_PeriodString                "PULSER_Period"         /* asynFloat64,  r/w */
-#define P_PULSER_WidthString                "PULSER_Width"         /* asynFloat64,  r/w */
-#define P_ACQUIREString         "ACQUIRE"         /* asynInt32,    r/w */
-#define P_BUFFERString                "BUFFER"         /* asynFloat64,  r/w */
-#define P_BURSTString                "BURST"         /* asynFloat64,  r/w */
-#define P_COUNT1String                "COUNT1"         /* asynFloat64,  r/o */
-#define P_COUNT2String                "COUNT2"         /* asynFloat64,  r/o */
-#define P_COUNT3String                "COUNT3"         /* asynFloat64,  r/o */
-#define P_COUNT4String                "COUNT4"         /* asynFloat64,  r/o */
-#define P_TRIGGER_MODEString         "TRIGGER_MODE"         /* asynInt32,    r/w */
-#define P_TRIGGER_POLARITYString         "TRIGGER_POLARITY"         /* asynInt32,    r/w */
-#define P_TRIGGER_STARTString         "TRIGGER_START"         /* asynInt32,    r/w */
-#define P_TRIGGER_STOPString         "TRIGGER_STOP"         /* asynInt32,    r/w */
+#define P_DACString1                    "DAC1"                /* asynFloat64,  r/w */
+#define P_DACString2                    "DAC2"                /* asynFloat64,  r/w */
+#define P_DACString3                    "DAC3"                /* asynFloat64,  r/w */
+#define P_DACString4                    "DAC4"                /* asynFloat64,  r/w */
+#define P_DEADString                    "DEAD"                /* asynFloat64,  r/w */
+#define P_DHIString1                    "DHI1"                /* asynFloat64,  r/w */
+#define P_DHIString2                    "DHI2"                /* asynFloat64,  r/w */
+#define P_DHIString3                    "DHI3"                /* asynFloat64,  r/w */
+#define P_DHIString4                    "DHI4"                /* asynFloat64,  r/w */
+#define P_DLOString1                    "DLO1"                /* asynFloat64,  r/w */
+#define P_DLOString2                    "DLO2"                /* asynFloat64,  r/w */
+#define P_DLOString3                    "DLO3"                /* asynFloat64,  r/w */
+#define P_DLOString4                    "DLO4"                /* asynFloat64,  r/w */
+#define P_HIVO_VOLTSString1             "HIVO_VOLTS1"         /* asynFloat64,  r/w */
+#define P_HIVO_VOLTSString2             "HIVO_VOLTS2"         /* asynFloat64,  r/w */
+#define P_HIVO_VOLTSString3             "HIVO_VOLTS3"         /* asynFloat64,  r/w */
+#define P_HIVO_VOLTSString4             "HIVO_VOLTS4"         /* asynFloat64,  r/w */
+#define P_HIVO_ENABLEString1            "HIVO_ENABLE1"        /* asynInt32,    r/w */
+#define P_HIVO_ENABLEString2            "HIVO_ENABLE2"        /* asynInt32,    r/w */
+#define P_HIVO_ENABLEString3            "HIVO_ENABLE3"        /* asynInt32,    r/w */
+#define P_HIVO_ENABLEString4            "HIVO_ENABLE4"        /* asynInt32,    r/w */
+#define P_PERIODString                  "PERIOD"              /* asynFloat64,  r/w */
+#define P_POLARITYString1               "POLARITY1"           /* asynInt32,    r/w */
+#define P_POLARITYString2               "POLARITY2"           /* asynInt32,    r/w */
+#define P_POLARITYString3               "POLARITY3"           /* asynInt32,    r/w */
+#define P_POLARITYString4               "POLARITY4"           /* asynInt32,    r/w */
+#define P_PULSER_PeriodString           "PULSER_Period"       /* asynFloat64,  r/w */
+#define P_PULSER_WidthString            "PULSER_Width"        /* asynFloat64,  r/w */
+#define P_ACQUIREString                 "ACQUIRE"             /* asynInt32,    r/w */
+#define P_BUFFERString                  "BUFFER"              /* asynFloat64,  r/w */
+#define P_BURSTString                   "BURST"               /* asynFloat64,  r/w */
+#define P_COUNT1String                  "COUNT1"              /* asynFloat64,  r/o */
+#define P_COUNT2String                  "COUNT2"              /* asynFloat64,  r/o */
+#define P_COUNT3String                  "COUNT3"              /* asynFloat64,  r/o */
+#define P_COUNT4String                  "COUNT4"              /* asynFloat64,  r/o */
+#define P_TRIGGER_MODEString            "TRIGGER_MODE"        /* asynInt32,    r/w */
+#define P_TRIGGER_POLARITYString        "TRIGGER_POLARITY"    /* asynInt32,    r/w */
+#define P_TRIGGER_STARTString           "TRIGGER_START"       /* asynInt32,    r/w */
+#define P_TRIGGER_STOPString            "TRIGGER_STOP"        /* asynInt32,    r/w */
 
         /* asynFloat64,  r/w */
 // #define P_VertGainString           "SCOPE_VERT_GAIN"            /* asynFloat64,  r/w */
@@ -60,6 +60,7 @@ public:
     virtual asynStatus writeFloat64(asynUser *pasynUser, epicsFloat64 value);
     virtual asynStatus writeInt32(asynUser *pasynUser, epicsInt32 value);
     virtual asynStatus readFloat64(asynUser *pasynUser, epicsFloat64 *value);
+    virtual asynStatus readInt32(asynUser *pasynUser, epicsInt32 *value);
 
     /* These are the methods that are new to this class */
     void update_counts();
@@ -121,5 +122,4 @@ private:
     void get_n_set_4_channels(const char *command_ask, int param1, int param2, int param3, int param4, 
                                    int n_param1, int n_param2, int n_param3, int n_param4);
     void set_mbbo(const char *command_set, const std::string *mbbo_list, int mbbo_value);
-    void sync_w_device();
 };

@@ -22,4 +22,7 @@ dbLoadRecords("db/c400.db","P=EMA:, R=A:,PORT=testAPD,ADDR=0,TIMEOUT=10")
 cd "${TOP}/iocBoot/${IOC}"
 iocInit
 
-dbpf EMA:A:set_current 5s
+dbpf EMA:A:ACQUIRE 0
+
+
+
