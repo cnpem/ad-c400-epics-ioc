@@ -126,13 +126,16 @@ c400drv::c400drv(const char *portName, char *ip)
     set_mbbo(C400_MSG_TRIGGER_MODE_SET, trigger_mode_mbbo, 1); 
     setIntegerParam (P_TRIGGER_MODE,      1);
 
+    //Abort any counting while IOC is booting
+    send_to_equipment(C400_MSG_ABORT_SET);
+
     //Set counter to 0 as default
     setDoubleParam (P_COUNT1,          0);
     setDoubleParam (P_COUNT2,          0);
     setDoubleParam (P_COUNT3,          0);
     setDoubleParam (P_COUNT4,          0);
-    //sync_w_device();
 
+    status = (asynStatus) callParamCallbacks();
 
     status = (asynStatus)(epicsThreadCreate("c400countTask",
                           epicsThreadPriorityMedium,
