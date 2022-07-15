@@ -1,0 +1,7 @@
+epicsEnvSet("ARCH","linux-x86")
+epicsEnvSet("IOC","iocstream")
+epicsEnvSet("TOP","/home/fmb/epics/stream")
+epicsEnvSet("EPICS_BASE","/home/fmb/epics/base-3.14.10")
+epicsEnvSet("ASYN","/home/fmb/epics/asyn-4.11")
+epicsEnvSet("CALC","/home/fmb/epics/calc/2-6-7")
+epicsEnvSet("GENSUB","/home/fmb/epics/genSubV1-6")

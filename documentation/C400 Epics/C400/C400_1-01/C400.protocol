@@ -1,0 +1,75 @@
+#
+# StreamDevice protocol for the C400.
+#
+# Version FMB Oxford 1.01
+#
+# A full command from the host to the C400 comprises as many characters
+# as needed to form the message, terminated by a LF character.
+# The LF is required for the C400 to commence processing.
+#
+# The C400 generates a reply to every message from the host when it is
+# the listener. First the C400 echos the command as sent including the LF.
+#
+# Responses to commands with a "?" will the have required data.
+# Responses to other commands should be the string OK.
+# Responses should be terminated by CR LF.
+#
+InTerminator = CR LF;
+OutTerminator = LF;
+ReplyTimeout = 2000;
+ReadTimeout  = 2000;
+locktimeout = 60000;
+#
+# State commands
+#
+# Save current state in EEPROM
+save {out "*SAV"; in "*SAV\10%*c";}
+# Recall state from EEPROM
+recall {out "*RCL"; in "*RCL\10%*c";}
+#
+# Initiate/Abort readings on valid trigger
+#
+init {out "INIT"; in "INIT\10%*s";}
+abort {out "ABORT"; in "ABORT\10%*s"; ReadTimeout = 10000}
+#
+# Query the last measured counts data.
+#
+getCs {out "FETCH:COUNTS?"; in "FETCH:COUNTS?\10%*e S,%d,%(\$1:\$2.VAL)d,%(\$1:\$3.VAL)d,%(\$1:\$4.VAL)d,%(\$1:\$5.VAL)e S,%*d,%*f V,%*f V,%*f V,%*f V";}
+#
+# Interface with auxiliary high voltages.
+#
+getHivs {out "CONF:HIVO:VOLTS?"; in "CONF:HIVO:VOLTS?\10%e V,%(\$1:\$2.VAL)e V,%(\$1:\$3.VAL)e V,%(\$1:\$4.VAL)e V";}
+setHivs {out "CONF:HIVO:VOLTS %(A).3e %(B).3e %(C).3e %(D).3e";in "CONF:HIVO:VOLTS %*f %*f %*f %*f\10OK";}
+enbHivs {out "CONF:HIVO:ENABLE %(A)d %(B)d %(C)d %(D)d";in "CONF:HIVO:ENABLE %*d %*d %*d %*d\10OK";}
+getEnbHivs {out "CONF:HIVO:ENABLE?";in "CONF:HIVO:ENABLE?\10%d,%(\$1:\$2.VAL)d,%(\$1:\$3.VAL)d,%(\$1:\$4.VAL)d";}
+#
+# Query the discriminator levels.
+#
+getLos {out "CONF:DLO?"; in "CONF:DLO?\10%e V,%(\$1:\$2.VAL)e V,%(\$1:\$3.VAL)e V,%(\$1:\$4.VAL)e V";}
+getHis {out "CONF:DHI?"; in "CONF:DHI?\10%e V,%(\$1:\$2.VAL)e V,%(\$1:\$3.VAL)e V,%(\$1:\$4.VAL)e V";}
+#
+# Set discriminator levels
+#
+setLos {out "CONF:DLO %(A).3e %(B).3e %(C).3e %(D).3e";in "CONF:DLO %*f %*f %*f %*f\10OK";}
+setHis {out "CONF:DHI %(A).3e %(B).3e %(C).3e %(D).3e";in "CONF:DHI %*f %*f %*f %*f\10OK";}
+#
+# Set/Query integration period in secs
+#
+setPeriod {out "CONF:PER %e"; in "CONF:PER %e\10OK";}
+getPeriod {out "CONF:PER?"; in "CONF:PER?\10%e S";}
+#
+# Get serial number
+#
+getSerial {out "SYST:SERIAL?"; in "SYST:SERIAL?\10%d";}
+#
+# Get digital status bits
+#
+getDigital {out "FETCH:DIGITAL?"; in "FETCH:DIGITAL?\10%u";}
+#
+# Get buffer size
+#
+buffer {out "TRIG:BUF?"; in "TRIG:BUF?\10%d";}
+#
+# Get trigger mode
+#
+getMode {out "TRIG:MODE?"; in "TRIG:MODE?\10%s";}

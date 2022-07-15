@@ -1,0 +1,10 @@
+file C400.template
+# Version FMB Oxford 1.01
+# Macro - Description
+# DEVICE - Device name
+# port - Serial port
+#
+{
+pattern { DEVICE           , port }
+        { DDSSS-TT-CCCCC-NN, COM1 }
+}
