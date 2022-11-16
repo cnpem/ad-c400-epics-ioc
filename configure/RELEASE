@@ -29,8 +29,8 @@
 # If using the sequencer, point SNCSEQ at its top directory:
 #SNCSEQ = $(MODULES)/seq-ver
 
-EPICS_BASE=/home/hugo/EPICS/epics-base
-ASYN=/home/hugo/EPICS/support/asyn
+EPICS_BASE=/usr/local/epics-nfs/base/R3.15.6
+ASYN=/usr/local/epics-nfs/modules/R3.15.6/synApps/R6.1/support/asyn-R4-36
 
 PCRE_INCLUDE=/usr/include/pcre
 PCRE_LIB=/usr/lib
