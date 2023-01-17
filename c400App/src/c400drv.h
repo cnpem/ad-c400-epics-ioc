@@ -107,6 +107,7 @@ protected:
     int P_TRIGGER_POLARITY;
     int P_TRIGGER_START;
     int P_TRIGGER_STOP;
+    int P_TRIGGER_PAUSE;
 
 private:
     asynUser *pasynUserEcho;
