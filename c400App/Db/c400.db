@@ -721,3 +721,20 @@ record(bo, "$(P)$(R)TRIGGER_STOP")
     field(ZNAM, "INTernal")
     field(ONAM, "BNC")
 }
+
+record(bi, "$(P)$(R)TRIGGER_PAUSE_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))TRIGGER_PAUSE")
+    field(SCAN, "I/O Intr")
+    field(ZNAM, "INTernal")
+    field(ONAM, "BNC")
+}
+
+record(bo, "$(P)$(R)TRIGGER_PAUSE")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))TRIGGER_PAUSE")
+    field(ZNAM, "INTernal")
+    field(ONAM, "BNC")
+}

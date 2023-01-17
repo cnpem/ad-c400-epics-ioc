@@ -58,6 +58,9 @@
 #define C400_MSG_TRIGGER_START_SET "TRIGger:SOURce:STARt "
 #define C400_MSG_TRIGGER_STOP_ASK "TRIGger:SOURce:STOP?"
 #define C400_MSG_TRIGGER_STOP_SET "TRIGger:SOURce:STOP "
+#define C400_MSG_TRIGGER_PAUSE_ASK "TRIGger:SOURce:PAUSE?"
+#define C400_MSG_TRIGGER_PAUSE_SET "TRIGger:SOURce:PAUSE "
+
 
 void update_counts(void *drvPvt);
 static const char *driverName = "c400driver";
@@ -116,6 +119,7 @@ c400drv::c400drv(const char *portName, char *ip)
     createParam(P_TRIGGER_POLARITYString, asynParamInt32, &P_TRIGGER_POLARITY);
     createParam(P_TRIGGER_STARTString, asynParamInt32, &P_TRIGGER_START);
     createParam(P_TRIGGER_STOPString, asynParamInt32, &P_TRIGGER_STOP);
+    createParam(P_TRIGGER_PAUSEString, asynParamInt32, &P_TRIGGER_PAUSE);
 
     pasynOctetSyncIO->connect(ip, 0, &pasynUserEcho, NULL);
     pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
@@ -261,6 +265,10 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
     else if (function == P_TRIGGER_STOP){
         result = set_direct(C400_MSG_TRIGGER_STOP_SET, C400_MSG_TRIGGER_STOP_ASK, 0, value);
         setIntegerParam (P_TRIGGER_STOP,      result);
+    }
+    else if (function == P_TRIGGER_PAUSE){
+        result = set_direct(C400_MSG_TRIGGER_PAUSE_SET, C400_MSG_TRIGGER_PAUSE_ASK, 0, value);
+        setIntegerParam (P_TRIGGER_PAUSE,      result);
     }
 
     /* Do callbacks so higher layers see any changes */
@@ -693,7 +701,7 @@ double c400drv::set_direct(const char *command_set, const char *command_ask, int
     }
 
     else{
-        if (command_set==C400_MSG_TRIGGER_START_SET or command_set==C400_MSG_TRIGGER_STOP_SET){
+        if (command_set==C400_MSG_TRIGGER_START_SET or command_set==C400_MSG_TRIGGER_STOP_SET or command_set==C400_MSG_TRIGGER_PAUSE_SET){
             if (int(val)==0)
                 str_val = "INTernal";
             else if (int(val)==1)
