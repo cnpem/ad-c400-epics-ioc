@@ -42,7 +42,9 @@
 #define P_TRIGGER_POLARITYString        "TRIGGER_POLARITY"    /* asynInt32,    r/w */
 #define P_TRIGGER_STARTString           "TRIGGER_START"       /* asynInt32,    r/w */
 #define P_TRIGGER_STOPString            "TRIGGER_STOP"        /* asynInt32,    r/w */
-#define P_TRIGGER_PAUSEString           "TRIGGER_PAUSE"        /* asynInt32,    r/w */
+#define P_TRIGGER_PAUSEString           "TRIGGER_PAUSE"       /* asynInt32,    r/w */
+#define P_SYSTEM_IPMODEString           "SYSTEM_IPMODE"       /* asynInt32,    r/w */
+
 
         /* asynFloat64,  r/w */
 // #define P_VertGainString           "SCOPE_VERT_GAIN"            /* asynFloat64,  r/w */
@@ -108,6 +110,7 @@ protected:
     int P_TRIGGER_START;
     int P_TRIGGER_STOP;
     int P_TRIGGER_PAUSE;
+    int P_SYSTEM_IPMODE;
 
 private:
     asynUser *pasynUserEcho;

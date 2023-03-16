@@ -705,6 +705,23 @@ record(bo, "$(P)$(R)TRIGGER_START")
     field(ONAM, "BNC")
 }
 
+record(bi, "$(P)$(R)SYSTEM_IPMODE_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))SYSTEM_IPMODE")
+    field(SCAN, "I/O Intr")
+    field(ZNAM, "DHCP")
+    field(ONAM, "Static")
+}
+
+record(bo, "$(P)$(R)SYSTEM_IPMODE")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))SYSTEM_IPMODE")
+    field(ZNAM, "DHCP")
+    field(ONAM, "Static")
+}
+
 record(bi, "$(P)$(R)TRIGGER_STOP_RBV")
 {
     field(DTYP, "asynInt32")

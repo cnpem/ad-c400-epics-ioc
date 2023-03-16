@@ -60,12 +60,15 @@
 #define C400_MSG_TRIGGER_STOP_SET "TRIGger:SOURce:STOP "
 #define C400_MSG_TRIGGER_PAUSE_ASK "TRIGger:SOURce:PAUSE?"
 #define C400_MSG_TRIGGER_PAUSE_SET "TRIGger:SOURce:PAUSE "
+#define C400_MSG_SYSTEM_IPMODE_ASK "SYSTem:COMMunication:IPMODE?"
+#define C400_MSG_SYSTEM_IPMODE_SET "SYSTem:COMMunication:IPMODE "
 
 
 void update_counts(void *drvPvt);
 static const char *driverName = "c400driver";
 static std::string trigger_mode_mbbo[]={"CUSTom", "INTernal", "EXTERNAL_START", "EXTERNAL_START_STOP",
                                         "EXTERNAL_START_HOLD", "EXTERNAL_WINDOWED", "DISCRIMINATOR_SWEEP"};
+static std::string system_ipmode_mbbo[]={"DHCP", "Static"};
 
 c400drv::c400drv(const char *portName, char *ip)
    : asynPortDriver(portName,
@@ -120,6 +123,7 @@ c400drv::c400drv(const char *portName, char *ip)
     createParam(P_TRIGGER_STARTString, asynParamInt32, &P_TRIGGER_START);
     createParam(P_TRIGGER_STOPString, asynParamInt32, &P_TRIGGER_STOP);
     createParam(P_TRIGGER_PAUSEString, asynParamInt32, &P_TRIGGER_PAUSE);
+    createParam(P_SYSTEM_IPMODEString, asynParamInt32, &P_SYSTEM_IPMODE);
 
     pasynOctetSyncIO->connect(ip, 0, &pasynUserEcho, NULL);
     pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
@@ -253,6 +257,10 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
     else if (function == P_TRIGGER_MODE){
         set_mbbo(C400_MSG_TRIGGER_MODE_SET, trigger_mode_mbbo, value);
         setIntegerParam (P_TRIGGER_MODE,      value);
+    }
+    else if (function == P_SYSTEM_IPMODE){
+        set_mbbo(C400_MSG_SYSTEM_IPMODE_SET, system_ipmode_mbbo, value);
+        setIntegerParam (P_SYSTEM_IPMODE,      value);
     }
     else if (function == P_TRIGGER_POLARITY){
         result = set_direct(C400_MSG_TRIGGER_POLARITY_SET, C400_MSG_TRIGGER_POLARITY_ASK, 0, value);

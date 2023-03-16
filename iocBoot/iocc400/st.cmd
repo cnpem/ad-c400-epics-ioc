@@ -12,7 +12,7 @@ dbLoadDatabase "dbd/c400.dbd"
 c400_registerRecordDeviceDriver pdbbase
 
 
-drvAsynIPPortConfigure("PS", "10.31.54.44:4003")
+drvAsynIPPortConfigure("PS", "10.32.74.32:4002")
 c400CreateDriver("testAPD", "PS")
 
 ## Load record instances
