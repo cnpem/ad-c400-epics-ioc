@@ -17,7 +17,7 @@
 #include <iocsh.h>
 
 //AsynPortDriver's includes
-#include <asynPortDriver.h>
+// #include <asynPortDriver.h>
 #include "asynOctetSyncIO.h"
 
 //c400's includes
@@ -73,8 +73,8 @@ static std::string system_ipmode_mbbo[]={"DHCP", "Static"};
 c400drv::c400drv(const char *portName, char *ip)
    : asynPortDriver(portName,
                     1, /* maxAddr */
-                    asynInt32Mask | asynFloat64Mask | asynEnumMask | asynDrvUserMask, /* Interface mask */
-                    asynInt32Mask | asynFloat64Mask | asynEnumMask,  /* Interrupt mask */
+                    asynInt32Mask | asynFloat64Mask | asynFloat64ArrayMask | asynEnumMask | asynDrvUserMask, /* Interface mask */
+                    asynInt32Mask | asynFloat64Mask | asynFloat64ArrayMask | asynEnumMask,  /* Interrupt mask */
                     ASYN_CANBLOCK, /* asynFlags.  This driver does not block and it is not multi-device, so flag is 0 */
                     1, /* Autoconnect */
                     0, /* Default priority */
@@ -82,6 +82,8 @@ c400drv::c400drv(const char *portName, char *ip)
 {
     asynStatus status;
     const char *functionName = "c400drv";
+    int maxPoints = 100;
+    pData_ = (epicsFloat64 *)calloc(maxPoints, sizeof(epicsFloat64));
 
     createParam(P_DACString1, asynParamFloat64, &P_DAC1);
     createParam(P_DACString2, asynParamFloat64, &P_DAC2);
@@ -112,7 +114,7 @@ c400drv::c400drv(const char *portName, char *ip)
     createParam(P_PULSER_PeriodString, asynParamFloat64, &P_PULSER_Period);
     createParam(P_PULSER_WidthString, asynParamFloat64, &P_PULSER_Width);
     createParam(P_ACQUIREString, asynParamInt32, &P_ACQUIRE);
-    createParam(P_BUFFERString, asynParamFloat64, &P_BUFFER);
+    createParam(P_BUFFERString, asynParamInt32, &P_BUFFER);
     createParam(P_BURSTString, asynParamFloat64, &P_BURST);
     createParam(P_COUNT1String, asynParamFloat64, &P_COUNT1);
     createParam(P_COUNT2String, asynParamFloat64, &P_COUNT2);
@@ -124,6 +126,8 @@ c400drv::c400drv(const char *portName, char *ip)
     createParam(P_TRIGGER_STOPString, asynParamInt32, &P_TRIGGER_STOP);
     createParam(P_TRIGGER_PAUSEString, asynParamInt32, &P_TRIGGER_PAUSE);
     createParam(P_SYSTEM_IPMODEString, asynParamInt32, &P_SYSTEM_IPMODE);
+    createParam(P_UPDATE_BUFFERString, asynParamInt32,  &P_UPDATE_BUFFER);
+    createParam(P_READ_BUFFERString, asynParamFloat64Array,  &P_READ_BUFFER);
 
     pasynOctetSyncIO->connect(ip, 0, &pasynUserEcho, NULL);
     pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
@@ -144,7 +148,6 @@ c400drv::c400drv(const char *portName, char *ip)
     setDoubleParam (P_COUNT4,          0);
 
     status = (asynStatus) callParamCallbacks();
-
     status = (asynStatus)(epicsThreadCreate("c400countTask",
                           epicsThreadPriorityMedium,
                           epicsThreadGetStackSize(epicsThreadStackMedium),
@@ -171,13 +174,16 @@ void update_counts(void *drvPvt)
 void c400drv::update_counts(){
     int is_counting;
     double sleep_for;
+    int buffer_size;
 
     while (true){
         getIntegerParam(P_ACQUIRE, &is_counting);
+        getIntegerParam(P_BUFFER, &buffer_size);
         getDoubleParam(P_PERIOD, &sleep_for);
-        if (is_counting){
+        if (is_counting and buffer_size == 0){
             get_n_set_4_channels(C400_MSG_COUNTS_ASK, P_COUNT1, P_COUNT2, 
                                 P_COUNT3, P_COUNT4, 2,3,4,5);
+            callParamCallbacks();
         }
         sleep(sleep_for);
     }
@@ -278,6 +284,11 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
         result = set_direct(C400_MSG_TRIGGER_PAUSE_SET, C400_MSG_TRIGGER_PAUSE_ASK, 0, value);
         setIntegerParam (P_TRIGGER_PAUSE,      result);
     }
+    else if (function == P_UPDATE_BUFFER){
+        update_buffer(13);
+        // setIntegerParam (P_TRIGGER_PAUSE,      value);
+    }
+
 
     /* Do callbacks so higher layers see any changes */
 
@@ -488,6 +499,10 @@ asynStatus c400drv::readInt32(asynUser *pasynUser, epicsInt32 *value)
         res = get_parsed_response(send_to_equipment(C400_MSG_POLARITY_ASK), 4);
         setIntegerParam (P_POLARITY4,          res);
     }
+    else if (function == P_BUFFER){
+        res = get_parsed_response(send_to_equipment(C400_MSG_BUFFER_ASK), 1);
+        setIntegerParam (P_BUFFER,          res);
+    }
 
     if (status)
         epicsSnprintf(pasynUser->errorMessage, pasynUser->errorMessageSize,
@@ -571,6 +586,7 @@ asynStatus c400drv::readFloat64(asynUser *pasynUser, epicsFloat64 *value)
         res = get_parsed_response(send_to_equipment(C400_MSG_DLO_ASK), 3);
         setDoubleParam (P_DLO3,          res);
     }
+
     else if (function == P_DLO4){
         res = get_parsed_response(send_to_equipment(C400_MSG_DLO_ASK), 4);
         setDoubleParam (P_DLO4,          res);
@@ -603,10 +619,6 @@ asynStatus c400drv::readFloat64(asynUser *pasynUser, epicsFloat64 *value)
         res = get_parsed_response(send_to_equipment(C400_MSG_PULSER_ASK), 2);
         setDoubleParam (P_PULSER_Width,          res);
     }
-    else if (function == P_BUFFER){
-        res = get_parsed_response(send_to_equipment(C400_MSG_BUFFER_ASK), 1);
-        setDoubleParam (P_BUFFER,          res);
-    }
     else if (function == P_BURST){
         res = get_parsed_response(send_to_equipment(C400_MSG_BURST_ASK), 1);
         setDoubleParam (P_BURST,          res);
@@ -623,6 +635,37 @@ asynStatus c400drv::readFloat64(asynUser *pasynUser, epicsFloat64 *value)
     return status;
 }
 
+asynStatus c400drv::readFloat64Array(asynUser *pasynUser, epicsFloat64 *value,
+                                         size_t nElements, size_t *nIn)
+{
+    int function = pasynUser->reason;
+    size_t ncopy;
+    epicsInt32 itemp;
+    asynStatus status = asynSuccess;
+    epicsTimeStamp timeStamp;
+    const char *functionName = "readFloat64Array";
+
+    // std::cout << "im inside readFloatArray" << std::endl;
+
+    if (function == P_READ_BUFFER) {
+        // memcpy(value, pData_, ncopy*sizeof(epicsFloat64));
+        // *nIn = ncopy;
+        ncopy = 100;
+        memcpy(value, pData_, ncopy*sizeof(epicsFloat64));
+        
+    }
+    if (status)
+        epicsSnprintf(pasynUser->errorMessage, pasynUser->errorMessageSize,
+                  "%s:%s: status=%d, function=%d",
+                  driverName, functionName, status, function);
+    else
+        asynPrint(pasynUser, ASYN_TRACEIO_DRIVER,
+              "%s:%s: function=%d\n",
+              driverName, functionName, function);
+
+
+    return status;
+}
 
 std::string c400drv::send_to_equipment(const char *writeBuffer)
 {
@@ -868,9 +911,6 @@ double c400drv::set_4_channels_int(const char *command_set, const char *command_
         }
 
         if (to_string){
-            if (str_val_ch1.find("1") == 0)
-                str_val_ch1 = "P";
-            else
                 str_val_ch1 = "N";
 
             if (str_val_ch2.find("1") == 0)
@@ -1014,7 +1054,42 @@ void c400drv::get_n_set_4_channels(const char *command_ask, int param1, int para
     setDoubleParam (param2,      ch2_val);
     setDoubleParam (param3,      ch3_val);
     setDoubleParam (param4,      ch4_val);
-    callParamCallbacks();
+}
+
+void c400drv::parse_counts(double *result_array, std::string val)
+{
+    std::string delimiter = ",";
+    size_t pos = 0;
+    std::string token;
+    std::string last_char;
+
+    token = val.substr(0, val.find("\n")+1);
+    val = val.substr(token.length(), val.length() - token.length());
+
+    // result_array[0] = token;
+    int array_idx = 0;
+    while ((pos = val.find(delimiter)) != std::string::npos) {
+        token = val.substr(0, pos);
+        last_char = token[token.length() - 1];
+        if (last_char == "S" or last_char == "V"){
+            token = token.substr(0, token.length() - 2);
+        }
+        try
+        {
+            result_array[array_idx] = std::stod(token);
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+        }
+        
+        
+        val.erase(0, pos + delimiter.length());
+        
+        array_idx++;
+    }
+    result_array[array_idx] = std::stod(val); //Append the last val
+
 }
 
 void c400drv::set_mbbo(const char *command_set, const std::string *mbbo_list, int mbbo_value)
@@ -1025,6 +1100,28 @@ void c400drv::set_mbbo(const char *command_set, const std::string *mbbo_list, in
     cmd_msg_send = command_set + mbbo_list[mbbo_value];
     send_to_equipment(cmd_msg_send.c_str());
 }
+
+void c400drv::update_buffer(int n_elements){
+    int ncopy = 15;
+    std::string val;
+    double result_array[12];    
+    int buffer_size;
+    std::string base_msg = "FETch:COUNts? ";
+    std::string get_full_buffer_str;
+
+    getIntegerParam (P_BUFFER,      &buffer_size);
+    get_full_buffer_str = base_msg + std::__cxx11::to_string(buffer_size);
+    val = send_to_equipment(get_full_buffer_str.c_str());
+    std::cout << val << std::endl;
+    // parse_counts(result_array, val);
+    // for (int i=0; i<ncopy; i++){
+    //     pData_[i] = result_array[i];
+    //     std::cout << result_array[i] << std::endl;
+    // }
+    // doCallbacksFloat64Array(pData_, ncopy,  P_READ_BUFFER, 0);
+}
+
+
 
 
 //--------------------------------------------------------

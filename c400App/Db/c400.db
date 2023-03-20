@@ -574,8 +574,8 @@ record(bo, "$(P)$(R)ACQUIRE")
 record(ai, "$(P)$(R)BUFFER_SIZE_RBV")
 {
    field(DESC,"Get BUFFER size")
-   #field(PINI, "1")
-   field(DTYP, "asynFloat64")
+   field(PINI, "1")
+   field(DTYP, "asynInt32")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))BUFFER")
    field(PREC, "5")
    field(SCAN, "I/O Intr")
@@ -585,7 +585,7 @@ record(ai, "$(P)$(R)BUFFER_SIZE_RBV")
 record(ao, "$(P)$(R)BUFFER_SIZE")
 {
    field(DESC,"Set BUFFER size")
-   field(DTYP, "asynFloat64")
+   field(DTYP, "asynInt32")
    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))BUFFER")
    field(PREC, "5")
    #field(EGU,"s")
@@ -755,3 +755,25 @@ record(bo, "$(P)$(R)TRIGGER_PAUSE")
     field(ZNAM, "INTernal")
     field(ONAM, "BNC")
 }
+
+record(bo, "$(P)$(R)UPDATE_BUFFER")
+{
+    field(DTYP, "asynInt32")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))UPDATE_BUFFER")
+   #  field(ZNAM, "INTernal")
+   #  field(ONAM, "BNC")
+}
+
+
+record(waveform, "$(P)$(R)READ_BUFFER") 
+{
+    field(DESC, "description")
+    field(DTYP, "asynFloat64ArrayIn")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER")
+    field(NELM, "100")
+    field(FTVL, "DOUBLE")
+    field(SCAN, "I/O Intr")
+   #  field(SCAN, "1 second")
+}
+
+

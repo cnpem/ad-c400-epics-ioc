@@ -1,4 +1,5 @@
 #include "asynPortDriver.h"
+#include <array>
 
 /* These are the drvInfo strings that are used to identify the parameters.
  * They are used by asyn clients, including standard asyn device support */
@@ -32,7 +33,7 @@
 #define P_PULSER_PeriodString           "PULSER_Period"       /* asynFloat64,  r/w */
 #define P_PULSER_WidthString            "PULSER_Width"        /* asynFloat64,  r/w */
 #define P_ACQUIREString                 "ACQUIRE"             /* asynInt32,    r/w */
-#define P_BUFFERString                  "BUFFER"              /* asynFloat64,  r/w */
+#define P_BUFFERString                  "BUFFER"              /* asynInt32,   r/w */
 #define P_BURSTString                   "BURST"               /* asynFloat64,  r/w */
 #define P_COUNT1String                  "COUNT1"              /* asynFloat64,  r/o */
 #define P_COUNT2String                  "COUNT2"              /* asynFloat64,  r/o */
@@ -44,6 +45,8 @@
 #define P_TRIGGER_STOPString            "TRIGGER_STOP"        /* asynInt32,    r/w */
 #define P_TRIGGER_PAUSEString           "TRIGGER_PAUSE"       /* asynInt32,    r/w */
 #define P_SYSTEM_IPMODEString           "SYSTEM_IPMODE"       /* asynInt32,    r/w */
+#define P_UPDATE_BUFFERString           "UPDATE_BUFFER"       /* asynInt32,    r/w */
+#define P_READ_BUFFERString             "READ_BUFFER"         /* asynFloat64Array,  r/o */
 
 
         /* asynFloat64,  r/w */
@@ -64,6 +67,8 @@ public:
     virtual asynStatus writeInt32(asynUser *pasynUser, epicsInt32 value);
     virtual asynStatus readFloat64(asynUser *pasynUser, epicsFloat64 *value);
     virtual asynStatus readInt32(asynUser *pasynUser, epicsInt32 *value);
+    virtual asynStatus readFloat64Array(asynUser *pasynUser, epicsFloat64 *value,
+                                        size_t nElements, size_t *nIn);
 
     /* These are the methods that are new to this class */
     void update_counts();
@@ -111,9 +116,12 @@ protected:
     int P_TRIGGER_STOP;
     int P_TRIGGER_PAUSE;
     int P_SYSTEM_IPMODE;
+    int P_UPDATE_BUFFER;
+    int P_READ_BUFFER;
 
 private:
     asynUser *pasynUserEcho;
+    epicsFloat64 *pData_;
     // float get_channel_val(std::string val, int channel, std::string search_for=" ", int size_sep=3);
     float get_parsed_response(std::string val, int n_element, std::string delimiter = ",");
     std::string send_to_equipment(const char *msg_ptr);
@@ -127,4 +135,6 @@ private:
     void get_n_set_4_channels(const char *command_ask, int param1, int param2, int param3, int param4, 
                                    int n_param1, int n_param2, int n_param3, int n_param4);
     void set_mbbo(const char *command_set, const std::string *mbbo_list, int mbbo_value);
+    void update_buffer(int n_elements);
+    void parse_counts(double *result_array, std::string received_line);
 };
