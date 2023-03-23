@@ -760,8 +760,8 @@ record(bo, "$(P)$(R)UPDATE_BUFFER")
 {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))UPDATE_BUFFER")
-   #  field(ZNAM, "INTernal")
-   #  field(ONAM, "BNC")
+    field(ZNAM, "0")
+    field(ONAM, "1")
 }
 
 
@@ -775,5 +775,3 @@ record(waveform, "$(P)$(R)READ_BUFFER")
     field(SCAN, "I/O Intr")
    #  field(SCAN, "1 second")
 }
-
-

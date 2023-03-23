@@ -24,7 +24,7 @@
 #include "c400drv.h"
 #include <epicsExport.h>
 
-#define TIMEOUT 5.0 // Scintillator response timeout
+#define TIMEOUT 2.0 // Scintillator response timeout
 #define C400_MSG_DAC_ASK "CONFigure:DAC?"
 #define C400_MSG_DAC_SET "CONFigure:DAC "
 #define C400_MSG_DEAD_ASK "CONFigure:DEADtime?"
@@ -133,7 +133,6 @@ c400drv::c400drv(const char *portName, char *ip)
     pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
     pasynOctetSyncIO->setOutputEos(pasynUserEcho, "\n", strlen("\n"));
 
-
     //Set default TRIGGER MODE as internal
     set_mbbo(C400_MSG_TRIGGER_MODE_SET, trigger_mode_mbbo, 1); 
     setIntegerParam (P_TRIGGER_MODE,      1);
@@ -198,14 +197,16 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
     double result;
     int is_counting;
     int was_counting = 0;
+    int buffer_size;
     /* Set the parameter in the parameter library. */
     status = (asynStatus) setIntegerParam(function, value);
 
     /* Fetch the parameter string name for possible use in debugging */
     getParamName(function, &paramName);
 
+    getIntegerParam(P_BUFFER, &buffer_size);
     getIntegerParam(P_ACQUIRE, &is_counting);
-    if (is_counting and function != P_ACQUIRE){
+    if (is_counting and function != P_ACQUIRE and buffer_size == 0){
         send_to_equipment(C400_MSG_ABORT_SET);
         setIntegerParam (P_ACQUIRE,      0);
         was_counting = 1;
@@ -284,9 +285,13 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
         result = set_direct(C400_MSG_TRIGGER_PAUSE_SET, C400_MSG_TRIGGER_PAUSE_ASK, 0, value);
         setIntegerParam (P_TRIGGER_PAUSE,      result);
     }
+    else if (function == P_BUFFER){
+        result = set_direct(C400_MSG_BUFFER_SET, C400_MSG_BUFFER_ASK, 0, value);
+        setIntegerParam (P_BUFFER,      value);
+    }
     else if (function == P_UPDATE_BUFFER){
         update_buffer(13);
-        // setIntegerParam (P_TRIGGER_PAUSE,      value);
+        setIntegerParam (P_UPDATE_BUFFER,      value);
     }
 
 
@@ -423,10 +428,6 @@ asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
         result = set_2_vals(C400_MSG_PULSER_SET, C400_MSG_PULSER_ASK, 
                                 P_PULSER_Period, P_PULSER_Width, 2, value);
         setDoubleParam (P_PULSER_Width,      result);
-    }
-    else if (function == P_BUFFER){
-        result = set_direct(C400_MSG_BUFFER_SET, C400_MSG_BUFFER_ASK, 0, value);
-        setDoubleParam (P_BUFFER,      value);
     }
     else if (function == P_BURST){
         result = set_direct(C400_MSG_BURST_SET, C400_MSG_BURST_ASK, 0, value);
@@ -673,7 +674,7 @@ std::string c400drv::send_to_equipment(const char *writeBuffer)
     size_t nRead, nActual;
     int eomReason;
     double readValue;    
-    char readBuffer[100];
+    char readBuffer[1000];
 
     status = pasynOctetSyncIO->writeRead(pasynUserEcho, writeBuffer, strlen(writeBuffer), readBuffer,
                                      sizeof(readBuffer), TIMEOUT, &nActual, &nRead, &eomReason);
@@ -1111,8 +1112,18 @@ void c400drv::update_buffer(int n_elements){
 
     getIntegerParam (P_BUFFER,      &buffer_size);
     get_full_buffer_str = base_msg + std::__cxx11::to_string(buffer_size);
+    // Need to parse several lines, each one ending with "\r\n"
+    // The equipment also return a blank line at the end, wich means that the last line is \r\n\r\n
+    // So we can use this to tell that this is the last line and get all previous ones as well
+    // the problem is that asyn matches any \r\n and stop listening to the equipment
+    // Soultion: Use the middle pattern that appears in the string \r\n\r\n, which is \n\r
+    // Return to the standard input eos afterwards 
+
+    pasynOctetSyncIO->setInputEos(pasynUserEcho, "\n\r", strlen("\n\r"));
     val = send_to_equipment(get_full_buffer_str.c_str());
+    pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
     std::cout << val << std::endl;
+
     // parse_counts(result_array, val);
     // for (int i=0; i<ncopy; i++){
     //     pData_[i] = result_array[i];
