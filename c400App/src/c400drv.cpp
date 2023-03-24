@@ -5,6 +5,7 @@
 #include <math.h>
 #include <iostream>
 #include <unistd.h>
+#include <sstream>
 
 //EPICS's includes
 #include <epicsTypes.h>
@@ -672,6 +673,7 @@ std::string c400drv::send_to_equipment(const char *writeBuffer)
 {
     asynStatus status = asynSuccess;
     size_t nRead, nActual;
+    std::string null_str = "";
     int eomReason;
     double readValue;    
     char readBuffer[1000];
@@ -682,6 +684,9 @@ std::string c400drv::send_to_equipment(const char *writeBuffer)
     
     std::cout << "status: " << status << std::endl;
     std::cout << "Buffer: " << readBuffer << std::endl;
+    if (status == 1){
+        return null_str;
+    }
     return std::string (readBuffer);
 
 }
@@ -1007,7 +1012,7 @@ void c400drv::get_n_set_4_channels(const char *command_ask, int param1, int para
                                    int n_param1, int n_param2, int n_param3, int n_param4)
 {
     std::string token;
-    std::string result_array[15];
+    double result_array[15];
     std::string val;
     std::string delimiter = ",";
     // std::string cmd_msg_read;
@@ -1019,38 +1024,18 @@ void c400drv::get_n_set_4_channels(const char *command_ask, int param1, int para
     size_t pos = 0;
 
     val = send_to_equipment(command_ask);
+    parse_counts(result_array, val);
 
-    token = val.substr(0, val.find("\n")+1);
-    val = val.substr(token.length(), val.length() - token.length());
-
-    result_array[0] = token;
-    int array_idx = 1;
-    while ((pos = val.find(delimiter)) != std::string::npos) {
-        token = val.substr(0, pos);
-        result_array[array_idx] = token;
-        val.erase(0, pos + delimiter.length());
-        array_idx++;
-    }
-    result_array[array_idx] = val; //Append the last val
-
-    try {
-        ch1_val = std::stof(result_array[n_param1]);
-        ch2_val = std::stof(result_array[n_param2]);
-        ch3_val = std::stof(result_array[n_param3]);
-        ch4_val = std::stof(result_array[n_param4]);
-    }
-
-    catch (...){
-        getDoubleParam (param1,      &ch1_val);
-        getDoubleParam (param2,      &ch2_val);
-        getDoubleParam (param3,      &ch3_val);
-        getDoubleParam (param4,      &ch4_val);;
-    }
+    ch1_val = result_array[1];
+    ch2_val = result_array[2];
+    ch3_val = result_array[3];
+    ch4_val = result_array[4];
 
     std::cout << "ch1: " << ch1_val << std::endl;
     std::cout << "ch2: " << ch2_val << std::endl;
     std::cout << "ch3: " << ch3_val << std::endl;
     std::cout << "ch4: " << ch4_val << std::endl;
+    
     setDoubleParam (param1,      ch1_val);
     setDoubleParam (param2,      ch2_val);
     setDoubleParam (param3,      ch3_val);
@@ -1103,10 +1088,13 @@ void c400drv::set_mbbo(const char *command_set, const std::string *mbbo_list, in
 }
 
 void c400drv::update_buffer(int n_elements){
-    int ncopy = 15;
+    int n_args = 5;
+    int p_data_array_pos = 0; // Position in the waveform array to be updated in the loop
     std::string val;
-    double result_array[12];    
+    double temp_array[20];
+    double result_array[200];    
     int buffer_size;
+    int counter = 0;
     std::string base_msg = "FETch:COUNts? ";
     std::string get_full_buffer_str;
 
@@ -1122,14 +1110,30 @@ void c400drv::update_buffer(int n_elements){
     pasynOctetSyncIO->setInputEos(pasynUserEcho, "\n\r", strlen("\n\r"));
     val = send_to_equipment(get_full_buffer_str.c_str());
     pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
-    std::cout << val << std::endl;
+    
+    if (val == ""){
+        // std::cout << "Data not yet collected" << std::endl;
+        return;
+    }
 
-    // parse_counts(result_array, val);
-    // for (int i=0; i<ncopy; i++){
-    //     pData_[i] = result_array[i];
-    //     std::cout << result_array[i] << std::endl;
-    // }
-    // doCallbacksFloat64Array(pData_, ncopy,  P_READ_BUFFER, 0);
+    std::istringstream iss(val);
+    for (std::string line; std::getline(iss, line); )
+    {
+        counter ++;
+        if (counter == 1){
+            continue; // Skip first line
+        }
+
+        std::cout << line << std::endl;
+        parse_counts(temp_array, line);
+        for (int i=1; i<=n_args; i++){
+            // std::cout << temp_array[i] << std::endl;
+            pData_[p_data_array_pos] = temp_array[i];
+            p_data_array_pos ++;
+        }
+
+    }
+    doCallbacksFloat64Array(pData_, 70,  P_READ_BUFFER, 0);
 }
 
 
