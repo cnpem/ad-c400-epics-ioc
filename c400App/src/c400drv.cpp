@@ -1074,7 +1074,15 @@ void c400drv::parse_counts(double *result_array, std::string val)
         
         array_idx++;
     }
-    result_array[array_idx] = std::stod(val); //Append the last val
+        try
+    {
+        result_array[array_idx] = std::stod(val); //Append the last val
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
 
 }
 
