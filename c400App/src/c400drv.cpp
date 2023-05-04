@@ -64,6 +64,7 @@
 #define C400_MSG_SYSTEM_IPMODE_ASK "SYSTem:COMMunication:IPMODE?"
 #define C400_MSG_SYSTEM_IPMODE_SET "SYSTem:COMMunication:IPMODE "
 
+#define buffer_array_size 65536*8
 
 void update_counts(void *drvPvt);
 static const char *driverName = "c400driver";
@@ -83,7 +84,7 @@ c400drv::c400drv(const char *portName, char *ip)
 {
     asynStatus status;
     const char *functionName = "c400drv";
-    int maxPoints = 100;
+    int maxPoints = buffer_array_size;
     pData_ = (epicsFloat64 *)calloc(maxPoints, sizeof(epicsFloat64));
 
     createParam(P_DACString1, asynParamFloat64, &P_DAC1);
@@ -684,9 +685,9 @@ std::string c400drv::send_to_equipment(const char *writeBuffer)
     
     std::cout << "status: " << status << std::endl;
     std::cout << "Buffer: " << readBuffer << std::endl;
-    if (status == 1){
-        return null_str;
-    }
+    // if (status == 1){
+    //     return null_str;
+    // }
     return std::string (readBuffer);
 
 }
@@ -1096,11 +1097,11 @@ void c400drv::set_mbbo(const char *command_set, const std::string *mbbo_list, in
 }
 
 void c400drv::update_buffer(int n_elements){
+    int number_of_lines_in_buffer_message = 14;
     int n_args = 5;
     int p_data_array_pos = 0; // Position in the waveform array to be updated in the loop
     std::string val;
-    double temp_array[20];
-    double result_array[200];    
+    double temp_array[20]; 
     int buffer_size;
     int counter = 0;
     std::string base_msg = "FETch:COUNts? ";
@@ -1115,34 +1116,42 @@ void c400drv::update_buffer(int n_elements){
     // Soultion: Use the middle pattern that appears in the string \r\n\r\n, which is \n\r
     // Return to the standard input eos afterwards 
 
-    pasynOctetSyncIO->setInputEos(pasynUserEcho, "\n\r", strlen("\n\r"));
-    val = send_to_equipment(get_full_buffer_str.c_str());
-    pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
-    
-    if (val == ""){
-        // std::cout << "Data not yet collected" << std::endl;
-        return;
-    }
 
-    std::istringstream iss(val);
-    for (std::string line; std::getline(iss, line); )
-    {
-        counter ++;
-        if (counter == 1){
-            continue; // Skip first line
+    int number_of_needed_buffer_reads = (int) ceil( (double) buffer_size/number_of_lines_in_buffer_message);
+    std::cout <<  "calc " << buffer_size/number_of_lines_in_buffer_message << std::endl;
+    std::cout <<  "Number of it " << number_of_needed_buffer_reads << std::endl;
+    for (int j=0; j<number_of_needed_buffer_reads; j++){
+        
+        pasynOctetSyncIO->setInputEos(pasynUserEcho, "\n\r", strlen("\n\r"));
+        val = send_to_equipment(get_full_buffer_str.c_str());
+        pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
+        std::cout << "value gotten is " << val << std::endl;
+        if (val == ""){
+            std::cout << "Data not yet collected" << std::endl;
+            return;
         }
 
-        std::cout << line << std::endl;
-        parse_counts(temp_array, line);
-        for (int i=1; i<=n_args; i++){
-            // std::cout << temp_array[i] << std::endl;
-            pData_[p_data_array_pos] = temp_array[i];
-            p_data_array_pos ++;
-        }
+        std::istringstream iss(val);
+        for (std::string line; std::getline(iss, line); ){
+            counter ++;
+            if (counter == 1){
+                continue; // Skip first line
+            }
 
+            std::cout << line << std::endl;
+            parse_counts(temp_array, line);
+            for (int i=1; i<=n_args; i++){
+                std::cout << "Pdata pos " << p_data_array_pos << " Array data "  << pData_[p_data_array_pos] << std::endl;
+                // pData_[p_data_array_pos] = temp_array[i];
+                pData_[p_data_array_pos] = i;
+                p_data_array_pos ++;
+            }
+        }
     }
-    doCallbacksFloat64Array(pData_, 70,  P_READ_BUFFER, 0);
+    std::cout << "callback to array" << std::endl;
+    doCallbacksFloat64Array(pData_, buffer_array_size,  P_READ_BUFFER, 0);
 }
+
 
 
 
@@ -1170,3 +1179,4 @@ void c400drvRegister(void){
 extern "C" {
     epicsExportRegistrar(c400drvRegister);
 }
+#define buffer_array_size 1000*8

@@ -122,6 +122,7 @@ protected:
 private:
     asynUser *pasynUserEcho;
     epicsFloat64 *pData_;
+    int buffer_array_size = 1000*8;
     // float get_channel_val(std::string val, int channel, std::string search_for=" ", int size_sep=3);
     float get_parsed_response(std::string val, int n_element, std::string delimiter = ",");
     std::string send_to_equipment(const char *msg_ptr);
