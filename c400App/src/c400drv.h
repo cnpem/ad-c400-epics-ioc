@@ -45,7 +45,6 @@
 #define P_TRIGGER_STOPString            "TRIGGER_STOP"        /* asynInt32,    r/w */
 #define P_TRIGGER_PAUSEString           "TRIGGER_PAUSE"       /* asynInt32,    r/w */
 #define P_SYSTEM_IPMODEString           "SYSTEM_IPMODE"       /* asynInt32,    r/w */
-#define P_UPDATE_BUFFERString           "UPDATE_BUFFER"       /* asynInt32,    r/w */
 #define P_READ_BUFFERString             "READ_BUFFER"         /* asynFloat64Array,  r/o */
 
 
@@ -116,13 +115,11 @@ protected:
     int P_TRIGGER_STOP;
     int P_TRIGGER_PAUSE;
     int P_SYSTEM_IPMODE;
-    int P_UPDATE_BUFFER;
     int P_READ_BUFFER;
 
 private:
     asynUser *pasynUserEcho;
     epicsFloat64 *pData_;
-    int buffer_array_size = 1000*8;
     // float get_channel_val(std::string val, int channel, std::string search_for=" ", int size_sep=3);
     float get_parsed_response(std::string val, int n_element, std::string delimiter = ",");
     std::string send_to_equipment(const char *msg_ptr);
@@ -136,6 +133,6 @@ private:
     void get_n_set_4_channels(const char *command_ask, int param1, int param2, int param3, int param4, 
                                    int n_param1, int n_param2, int n_param3, int n_param4);
     void set_mbbo(const char *command_set, const std::string *mbbo_list, int mbbo_value);
-    void update_buffer(int n_elements);
+    void update_buffer();
     void parse_counts(double *result_array, std::string received_line);
 };

@@ -128,7 +128,6 @@ c400drv::c400drv(const char *portName, char *ip)
     createParam(P_TRIGGER_STOPString, asynParamInt32, &P_TRIGGER_STOP);
     createParam(P_TRIGGER_PAUSEString, asynParamInt32, &P_TRIGGER_PAUSE);
     createParam(P_SYSTEM_IPMODEString, asynParamInt32, &P_SYSTEM_IPMODE);
-    createParam(P_UPDATE_BUFFERString, asynParamInt32,  &P_UPDATE_BUFFER);
     createParam(P_READ_BUFFERString, asynParamFloat64Array,  &P_READ_BUFFER);
 
     pasynOctetSyncIO->connect(ip, 0, &pasynUserEcho, NULL);
@@ -184,6 +183,14 @@ void c400drv::update_counts(){
         if (is_counting and buffer_size == 0){
             get_n_set_4_channels(C400_MSG_COUNTS_ASK, P_COUNT1, P_COUNT2, 
                                 P_COUNT3, P_COUNT4, 2,3,4,5);
+            callParamCallbacks();
+        }
+        else if (is_counting and buffer_size != 0){
+            lock();
+            sleep(sleep_for*buffer_size + 5);
+            update_buffer();
+            unlock();
+            setIntegerParam (P_ACQUIRE,      0);
             callParamCallbacks();
         }
         sleep(sleep_for);
@@ -257,11 +264,13 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
         setIntegerParam (P_POLARITY4,      result);
     }
     else if (function == P_ACQUIRE){
+        setIntegerParam (P_ACQUIRE,      value);
+        status = (asynStatus) callParamCallbacks();
         if (value==1)
             send_to_equipment(C400_MSG_ACQUIRE_SET);
         else if (value==0)
             send_to_equipment(C400_MSG_ABORT_SET);
-        setIntegerParam (P_ACQUIRE,      value);
+        
     }
     else if (function == P_TRIGGER_MODE){
         set_mbbo(C400_MSG_TRIGGER_MODE_SET, trigger_mode_mbbo, value);
@@ -291,11 +300,6 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
         result = set_direct(C400_MSG_BUFFER_SET, C400_MSG_BUFFER_ASK, 0, value);
         setIntegerParam (P_BUFFER,      value);
     }
-    else if (function == P_UPDATE_BUFFER){
-        update_buffer(13);
-        setIntegerParam (P_UPDATE_BUFFER,      value);
-    }
-
 
     /* Do callbacks so higher layers see any changes */
 
@@ -506,6 +510,9 @@ asynStatus c400drv::readInt32(asynUser *pasynUser, epicsInt32 *value)
         res = get_parsed_response(send_to_equipment(C400_MSG_BUFFER_ASK), 1);
         setIntegerParam (P_BUFFER,          res);
     }
+    else {
+        setIntegerParam (function,          res);
+    }
 
     if (status)
         epicsSnprintf(pasynUser->errorMessage, pasynUser->errorMessageSize,
@@ -589,7 +596,6 @@ asynStatus c400drv::readFloat64(asynUser *pasynUser, epicsFloat64 *value)
         res = get_parsed_response(send_to_equipment(C400_MSG_DLO_ASK), 3);
         setDoubleParam (P_DLO3,          res);
     }
-
     else if (function == P_DLO4){
         res = get_parsed_response(send_to_equipment(C400_MSG_DLO_ASK), 4);
         setDoubleParam (P_DLO4,          res);
@@ -685,9 +691,6 @@ std::string c400drv::send_to_equipment(const char *writeBuffer)
     
     std::cout << "status: " << status << std::endl;
     std::cout << "Buffer: " << readBuffer << std::endl;
-    // if (status == 1){
-    //     return null_str;
-    // }
     return std::string (readBuffer);
 
 }
@@ -1096,7 +1099,7 @@ void c400drv::set_mbbo(const char *command_set, const std::string *mbbo_list, in
     send_to_equipment(cmd_msg_send.c_str());
 }
 
-void c400drv::update_buffer(int n_elements){
+void c400drv::update_buffer(){
     int number_of_lines_in_buffer_message = 14;
     int n_args = 5;
     int p_data_array_pos = 0; // Position in the waveform array to be updated in the loop

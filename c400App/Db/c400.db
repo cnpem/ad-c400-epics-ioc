@@ -566,9 +566,18 @@ record(ao, "$(P)$(R)PULSER_WIDTH")
 record(bo, "$(P)$(R)ACQUIRE")
 {
     field(DTYP, "asynInt32")
-    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))Acquire")
+    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))ACQUIRE")
     field(ZNAM, "0")
     field(ONAM, "1")
+}
+
+record(bi, "$(P)$(R)ACQUIRE_RBV")
+{
+    field(DTYP, "asynInt32")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))ACQUIRE")
+    field(ZNAM, "0")
+    field(ONAM, "1")
+    field(SCAN, "I/O Intr")
 }
 
 record(ai, "$(P)$(R)BUFFER_SIZE_RBV")
