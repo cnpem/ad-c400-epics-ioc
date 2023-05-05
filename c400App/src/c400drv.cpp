@@ -64,7 +64,7 @@
 #define C400_MSG_SYSTEM_IPMODE_ASK "SYSTem:COMMunication:IPMODE?"
 #define C400_MSG_SYSTEM_IPMODE_SET "SYSTem:COMMunication:IPMODE "
 
-#define buffer_array_size 65536*8
+#define buffer_array_size 65536*5
 
 void update_counts(void *drvPvt);
 static const char *driverName = "c400driver";
@@ -173,13 +173,14 @@ void update_counts(void *drvPvt)
 
 void c400drv::update_counts(){
     int is_counting;
-    double sleep_for;
+    double acquire_period;
     int buffer_size;
+    int update_step = 400; // Buffer only update in a step of 400 counts
 
     while (true){
         getIntegerParam(P_ACQUIRE, &is_counting);
         getIntegerParam(P_BUFFER, &buffer_size);
-        getDoubleParam(P_PERIOD, &sleep_for);
+        getDoubleParam(P_PERIOD, &acquire_period);
         if (is_counting and buffer_size == 0){
             get_n_set_4_channels(C400_MSG_COUNTS_ASK, P_COUNT1, P_COUNT2, 
                                 P_COUNT3, P_COUNT4, 2,3,4,5);
@@ -187,13 +188,16 @@ void c400drv::update_counts(){
         }
         else if (is_counting and buffer_size != 0){
             lock();
-            sleep(sleep_for*buffer_size + 5);
+            for (int i = 0; i < buffer_array_size; ++i)  // Reset the array
+                pData_[i] = 0;
+            sleep(acquire_period*update_step); // 100% Empirical, give it a time to start the measure
             update_buffer();
+            sleep(acquire_period*buffer_size);
             unlock();
             setIntegerParam (P_ACQUIRE,      0);
             callParamCallbacks();
         }
-        sleep(sleep_for);
+        sleep(acquire_period);
     }
 }
 
@@ -1106,11 +1110,12 @@ void c400drv::update_buffer(){
     std::string val;
     double temp_array[20]; 
     int buffer_size;
-    int counter = 0;
+    double acquire_period;
     std::string base_msg = "FETch:COUNts? ";
     std::string get_full_buffer_str;
 
     getIntegerParam (P_BUFFER,      &buffer_size);
+    getDoubleParam (P_PERIOD,      &acquire_period);
     get_full_buffer_str = base_msg + std::__cxx11::to_string(buffer_size);
     // Need to parse several lines, each one ending with "\r\n"
     // The equipment also return a blank line at the end, wich means that the last line is \r\n\r\n
@@ -1121,14 +1126,14 @@ void c400drv::update_buffer(){
 
 
     int number_of_needed_buffer_reads = (int) ceil( (double) buffer_size/number_of_lines_in_buffer_message);
-    std::cout <<  "calc " << buffer_size/number_of_lines_in_buffer_message << std::endl;
-    std::cout <<  "Number of it " << number_of_needed_buffer_reads << std::endl;
+    std::cout <<  "sleep for: " << number_of_lines_in_buffer_message*acquire_period + 1 << std::endl;
     for (int j=0; j<number_of_needed_buffer_reads; j++){
+        
+        sleep(number_of_lines_in_buffer_message*acquire_period); // Wait for the measure to complete
         
         pasynOctetSyncIO->setInputEos(pasynUserEcho, "\n\r", strlen("\n\r"));
         val = send_to_equipment(get_full_buffer_str.c_str());
         pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
-        std::cout << "value gotten is " << val << std::endl;
         if (val == ""){
             std::cout << "Data not yet collected" << std::endl;
             return;
@@ -1136,17 +1141,18 @@ void c400drv::update_buffer(){
 
         std::istringstream iss(val);
         for (std::string line; std::getline(iss, line); ){
-            counter ++;
-            if (counter == 1){
-                continue; // Skip first line
+            const char* first_5_char = line.substr(0, 5).c_str();
+            std::cout << "first 5 char: " << first_5_char << std::endl;
+            if (strcmp(first_5_char, "FETch") == 0){
+                continue;
             }
 
             std::cout << line << std::endl;
             parse_counts(temp_array, line);
             for (int i=1; i<=n_args; i++){
                 std::cout << "Pdata pos " << p_data_array_pos << " Array data "  << pData_[p_data_array_pos] << std::endl;
-                // pData_[p_data_array_pos] = temp_array[i];
-                pData_[p_data_array_pos] = i;
+                pData_[p_data_array_pos] = temp_array[i];
+                // pData_[p_data_array_pos] = p_data_array_pos;
                 p_data_array_pos ++;
             }
         }
@@ -1182,4 +1188,4 @@ void c400drvRegister(void){
 extern "C" {
     epicsExportRegistrar(c400drvRegister);
 }
-#define buffer_array_size 1000*8
+

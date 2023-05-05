@@ -10,9 +10,10 @@ cd "${TOP}"
 ## Register all support components
 dbLoadDatabase "dbd/c400.dbd"
 c400_registerRecordDeviceDriver pdbbase
-
-
-drvAsynIPPortConfigure("PS", "10.31.54.44:4003")
+#10.31.54.44:4003 EMA
+#10.32.74.32:4002 PNR A
+#10.32.74.32:4003 PNR B
+drvAsynIPPortConfigure("PS", "10.32.74.32:4003")
 c400CreateDriver("testAPD", "PS")
 
 ## Load record instances

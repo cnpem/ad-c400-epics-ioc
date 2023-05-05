@@ -765,21 +765,12 @@ record(bo, "$(P)$(R)TRIGGER_PAUSE")
     field(ONAM, "BNC")
 }
 
-record(bo, "$(P)$(R)UPDATE_BUFFER")
-{
-    field(DTYP, "asynInt32")
-    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))UPDATE_BUFFER")
-    field(ZNAM, "0")
-    field(ONAM, "1")
-}
-
-
 record(waveform, "$(P)$(R)READ_BUFFER") 
 {
     field(DESC, "description")
     field(DTYP, "asynFloat64ArrayIn")
     field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER")
-    field(NELM, "65536")
+    field(NELM, "327680")
     field(FTVL, "DOUBLE")
     field(SCAN, "I/O Intr")
    #  field(SCAN, "1 second")
