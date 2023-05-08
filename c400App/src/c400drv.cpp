@@ -187,13 +187,13 @@ void c400drv::update_counts(){
             callParamCallbacks();
         }
         else if (is_counting and buffer_size != 0){
-            lock();
+            // lock();
             for (int i = 0; i < buffer_array_size; ++i)  // Reset the array
                 pData_[i] = 0;
-            sleep(acquire_period*update_step); // 100% Empirical, give it a time to start the measure
+            sleep(acquire_period*update_step + 10); // 100% Empirical, give it a time to start the measure
             update_buffer();
-            sleep(acquire_period*buffer_size);
-            unlock();
+            // sleep(acquire_period*buffer_size);
+            // unlock();
             setIntegerParam (P_ACQUIRE,      0);
             callParamCallbacks();
         }
@@ -687,7 +687,7 @@ std::string c400drv::send_to_equipment(const char *writeBuffer)
     std::string null_str = "";
     int eomReason;
     double readValue;    
-    char readBuffer[1000];
+    char readBuffer[10000];
 
     status = pasynOctetSyncIO->writeRead(pasynUserEcho, writeBuffer, strlen(writeBuffer), readBuffer,
                                      sizeof(readBuffer), TIMEOUT, &nActual, &nRead, &eomReason);
@@ -1104,13 +1104,16 @@ void c400drv::set_mbbo(const char *command_set, const std::string *mbbo_list, in
 }
 
 void c400drv::update_buffer(){
-    int number_of_lines_in_buffer_message = 14;
-    int n_args = 5;
+    int end_loop_flag = 1;
+    int number_of_ended_flag_in_a_row = 0; // wait for -401,"Requested data not yet collected" happends three times before breaking the loop
+    int n_args = 5; // Number of args to get from the parsed message
+    int number_of_lines_in_buffer_message = 15; // In general, the number of lines is 15
     int p_data_array_pos = 0; // Position in the waveform array to be updated in the loop
-    std::string val;
-    double temp_array[20]; 
-    int buffer_size;
+    double temp_array[20]; // array to hold the data that is going to be placed in the PV array
+    int buffer_size; 
     double acquire_period;
+    std::string data_not_collected_code = "-401,";
+    std::string val; // Placeholder for the retrieved equipmente message
     std::string base_msg = "FETch:COUNts? ";
     std::string get_full_buffer_str;
 
@@ -1124,20 +1127,12 @@ void c400drv::update_buffer(){
     // Soultion: Use the middle pattern that appears in the string \r\n\r\n, which is \n\r
     // Return to the standard input eos afterwards 
 
-
-    int number_of_needed_buffer_reads = (int) ceil( (double) buffer_size/number_of_lines_in_buffer_message);
-    std::cout <<  "sleep for: " << number_of_lines_in_buffer_message*acquire_period + 1 << std::endl;
-    for (int j=0; j<number_of_needed_buffer_reads; j++){
-        
+    while (end_loop_flag){
         sleep(number_of_lines_in_buffer_message*acquire_period); // Wait for the measure to complete
         
         pasynOctetSyncIO->setInputEos(pasynUserEcho, "\n\r", strlen("\n\r"));
         val = send_to_equipment(get_full_buffer_str.c_str());
         pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
-        if (val == ""){
-            std::cout << "Data not yet collected" << std::endl;
-            return;
-        }
 
         std::istringstream iss(val);
         for (std::string line; std::getline(iss, line); ){
@@ -1146,15 +1141,24 @@ void c400drv::update_buffer(){
             if (strcmp(first_5_char, "FETch") == 0){
                 continue;
             }
+            else if (strcmp(first_5_char,  data_not_collected_code.c_str()) == 0){
+                number_of_ended_flag_in_a_row++;
+                if (number_of_ended_flag_in_a_row > 3){
+                    end_loop_flag = 0;
+                    break;
+                }
+                continue;
+            }
 
             std::cout << line << std::endl;
             parse_counts(temp_array, line);
             for (int i=1; i<=n_args; i++){
-                std::cout << "Pdata pos " << p_data_array_pos << " Array data "  << pData_[p_data_array_pos] << std::endl;
                 pData_[p_data_array_pos] = temp_array[i];
                 // pData_[p_data_array_pos] = p_data_array_pos;
+                std::cout << "Pdata pos " << p_data_array_pos << " Array data "  << pData_[p_data_array_pos] << std::endl;
                 p_data_array_pos ++;
             }
+            number_of_ended_flag_in_a_row = 0;
         }
     }
     std::cout << "callback to array" << std::endl;
