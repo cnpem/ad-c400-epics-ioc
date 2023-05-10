@@ -51,6 +51,7 @@
 #define C400_MSG_BURST_ASK "TRIGger:BURst?"
 #define C400_MSG_BURST_SET "TRIGger:BURst "
 #define C400_MSG_COUNTS_ASK "FETch:COUNts?"
+#define C400_MSG_ENCODER_ASK "FETch:ENCOder?"
 #define C400_MSG_TRIGGER_MODE_ASK "TRIGger:MODE?"
 #define C400_MSG_TRIGGER_MODE_SET "TRIGger:MODE "
 #define C400_MSG_TRIGGER_POLARITY_ASK "TRIGger:POLarity?"
@@ -122,6 +123,7 @@ c400drv::c400drv(const char *portName, char *ip)
     createParam(P_COUNT2String, asynParamFloat64, &P_COUNT2);
     createParam(P_COUNT3String, asynParamFloat64, &P_COUNT3);
     createParam(P_COUNT4String, asynParamFloat64, &P_COUNT4);
+    createParam(P_ENCODERString, asynParamFloat64, &P_ENCODER);
     createParam(P_TRIGGER_MODEString, asynParamInt32, &P_TRIGGER_MODE);
     createParam(P_TRIGGER_POLARITYString, asynParamInt32, &P_TRIGGER_POLARITY);
     createParam(P_TRIGGER_STARTString, asynParamInt32, &P_TRIGGER_START);
@@ -623,6 +625,10 @@ asynStatus c400drv::readFloat64(asynUser *pasynUser, epicsFloat64 *value)
     else if (function == P_PERIOD){
         res = get_parsed_response(send_to_equipment(C400_MSG_PERIOD_ASK), 1);
         setDoubleParam (P_PERIOD,          res);
+    }
+    else if (function == P_ENCODER){
+        res = get_parsed_response(send_to_equipment(C400_MSG_ENCODER_ASK), 1);
+        setDoubleParam (P_ENCODER,          res);
     }
     else if (function == P_PULSER_Period) {
         res = get_parsed_response(send_to_equipment(C400_MSG_PULSER_ASK), 1);

@@ -39,6 +39,7 @@
 #define P_COUNT2String                  "COUNT2"              /* asynFloat64,  r/o */
 #define P_COUNT3String                  "COUNT3"              /* asynFloat64,  r/o */
 #define P_COUNT4String                  "COUNT4"              /* asynFloat64,  r/o */
+#define P_ENCODERString                 "ENCODER"             /* asynFloat64,  r/o */
 #define P_TRIGGER_MODEString            "TRIGGER_MODE"        /* asynInt32,    r/w */
 #define P_TRIGGER_POLARITYString        "TRIGGER_POLARITY"    /* asynInt32,    r/w */
 #define P_TRIGGER_STARTString           "TRIGGER_START"       /* asynInt32,    r/w */
@@ -46,10 +47,6 @@
 #define P_TRIGGER_PAUSEString           "TRIGGER_PAUSE"       /* asynInt32,    r/w */
 #define P_SYSTEM_IPMODEString           "SYSTEM_IPMODE"       /* asynInt32,    r/w */
 #define P_READ_BUFFERString             "READ_BUFFER"         /* asynFloat64Array,  r/o */
-
-
-        /* asynFloat64,  r/w */
-// #define P_VertGainString           "SCOPE_VERT_GAIN"            /* asynFloat64,  r/w */
 
 /** Class that demonstrates the use of the asynPortDriver base class to greatly simplify the task
   * of writing an asyn port driver.
@@ -109,6 +106,7 @@ protected:
     int P_COUNT2;
     int P_COUNT3;
     int P_COUNT4;
+    int P_ENCODER;
     int P_TRIGGER_MODE;
     int P_TRIGGER_POLARITY;
     int P_TRIGGER_START;
