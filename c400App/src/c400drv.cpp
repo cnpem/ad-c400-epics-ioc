@@ -178,6 +178,7 @@ void c400drv::update_counts(){
     double acquire_period;
     int buffer_size;
     int update_step = 400; // Buffer only update in a step of 400 counts
+    double res;
 
     while (true){
         getIntegerParam(P_ACQUIRE, &is_counting);
@@ -186,6 +187,8 @@ void c400drv::update_counts(){
         if (is_counting and buffer_size == 0){
             get_n_set_4_channels(C400_MSG_COUNTS_ASK, P_COUNT1, P_COUNT2, 
                                 P_COUNT3, P_COUNT4, 2,3,4,5);
+            res = get_parsed_response(send_to_equipment(C400_MSG_ENCODER_ASK), 1);
+            setDoubleParam (P_ENCODER,          res);
             callParamCallbacks();
         }
         else if (is_counting and buffer_size != 0){
@@ -199,7 +202,7 @@ void c400drv::update_counts(){
             setIntegerParam (P_ACQUIRE,      0);
             callParamCallbacks();
         }
-        sleep(acquire_period);
+        sleep(acquire_period*0.9);
     }
 }
 
@@ -625,10 +628,6 @@ asynStatus c400drv::readFloat64(asynUser *pasynUser, epicsFloat64 *value)
     else if (function == P_PERIOD){
         res = get_parsed_response(send_to_equipment(C400_MSG_PERIOD_ASK), 1);
         setDoubleParam (P_PERIOD,          res);
-    }
-    else if (function == P_ENCODER){
-        res = get_parsed_response(send_to_equipment(C400_MSG_ENCODER_ASK), 1);
-        setDoubleParam (P_ENCODER,          res);
     }
     else if (function == P_PULSER_Period) {
         res = get_parsed_response(send_to_equipment(C400_MSG_PULSER_ASK), 1);

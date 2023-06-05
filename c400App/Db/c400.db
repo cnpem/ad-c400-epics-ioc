@@ -667,7 +667,7 @@ record(ai, "$(P)$(R)READ_ENCODER")
    field(DTYP, "asynFloat64")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))ENCODER")
    field(PREC, "5")
-   field(SCAN, "1 second")
+   field(SCAN, "I/O Intr")
    field(EGU,"counts")
 }
 
