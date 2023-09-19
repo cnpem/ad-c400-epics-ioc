@@ -563,20 +563,24 @@ record(ao, "$(P)$(R)PULSER_WIDTH")
    field(EGU,"ns")
 }
 
-record(bo, "$(P)$(R)ACQUIRE")
+record(mbbo, "$(P)$(R)ACQUIRE")
 {
     field(DTYP, "asynInt32")
     field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))ACQUIRE")
-    field(ZNAM, "0")
-    field(ONAM, "1")
+    field(ZRST, "Done")
+    field(ZRVL, "0")
+    field(ONST, "Acquiring")
+    field(ONVL, "1")
 }
 
-record(bi, "$(P)$(R)ACQUIRE_RBV")
+record(mbbi, "$(P)$(R)ACQUIRE_RBV")
 {
     field(DTYP, "asynInt32")
     field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))ACQUIRE")
-    field(ZNAM, "0")
-    field(ONAM, "1")
+    field(ZRST, "Done")
+    field(ZRVL, "0")
+    field(ONST, "Acquiring")
+    field(ONVL, "1")
     field(SCAN, "I/O Intr")
 }
 
@@ -776,13 +780,79 @@ record(bo, "$(P)$(R)TRIGGER_PAUSE")
     field(ONAM, "BNC")
 }
 
-record(waveform, "$(P)$(R)READ_BUFFER") 
+record(waveform, "$(P)$(R)READ_BUFFER_ch1") 
 {
     field(DESC, "description")
     field(DTYP, "asynFloat64ArrayIn")
-    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER")
-    field(NELM, "327680")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER1")
     field(FTVL, "DOUBLE")
+    field(NELM, "65536")
     field(SCAN, "I/O Intr")
    #  field(SCAN, "1 second")
+}
+
+record(waveform, "$(P)$(R)READ_BUFFER_ch2") 
+{
+    field(DESC, "description")
+    field(DTYP, "asynFloat64ArrayIn")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER2")
+    field(FTVL, "DOUBLE")
+    field(NELM, "65536")
+    field(SCAN, "I/O Intr")
+   #  field(SCAN, "1 second")
+}
+
+record(waveform, "$(P)$(R)READ_BUFFER_ch3") 
+{
+    field(DESC, "description")
+    field(DTYP, "asynFloat64ArrayIn")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER3")
+    field(FTVL, "DOUBLE")
+    field(NELM, "65536")
+    field(SCAN, "I/O Intr")
+   #  field(SCAN, "1 second")
+}
+
+record(waveform, "$(P)$(R)READ_BUFFER_ch4") 
+{
+    field(DESC, "description")
+    field(DTYP, "asynFloat64ArrayIn")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER4")
+    field(FTVL, "DOUBLE")
+    field(NELM, "65536")
+    field(SCAN, "I/O Intr")
+   #  field(SCAN, "1 second")
+}
+
+record(waveform, "$(P)$(R)READ_BUFFER_TIME") 
+{
+    field(DESC, "description")
+    field(DTYP, "asynFloat64ArrayIn")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER_TIME")
+    field(FTVL, "DOUBLE")
+    field(NELM, "65536")
+    field(SCAN, "I/O Intr")
+   #  field(SCAN, "1 second")
+}
+
+record(mbbo, "$(P)$(R)READ_STATUS")
+{
+   field(DTYP, "asynInt32")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_DIGITAL")
+   field(ZRST, "Connected")
+   field(ZRVL, "0")
+   field(ONST, "Pending/Busy")
+   field(ONVL, "1")
+   field(TWST, "Error")
+   field(TWVL, "2")
+   field(THST, "Output changed")
+   field(THVL, "4")
+   field(FRST, "Urgent device error")
+   field(FRVL, "6")
+   field(FVST, "Updating firmware")
+   field(FVVL, "8")
+   field(SXST, "Starting up")
+   field(SXVL, "9")
+   field(SVST, "Measuring")
+   field(SVVL, "16")
 }

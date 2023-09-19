@@ -25,53 +25,8 @@
 #include "c400drv.h"
 #include <epicsExport.h>
 
-#define TIMEOUT 2.0 // Scintillator response timeout
-#define C400_MSG_DAC_ASK "CONFigure:DAC?"
-#define C400_MSG_DAC_SET "CONFigure:DAC "
-#define C400_MSG_DEAD_ASK "CONFigure:DEADtime?"
-#define C400_MSG_DEAD_SET "CONFigure:DEADtime "
-#define C400_MSG_DHI_ASK "CONFigure:DHI?"
-#define C400_MSG_DHI_SET "CONFigure:DHI "
-#define C400_MSG_DLO_ASK "CONFigure:DLO?"
-#define C400_MSG_DLO_SET "CONFigure:DLO "
-#define C400_MSG_HIVO_VOLTS_ASK "CONFigure:HIVOltage:VOLts?"
-#define C400_MSG_HIVO_VOLTS_SET "CONFigure:HIVOltage:VOLts "
-#define C400_MSG_HIVO_ENABLE_ASK "CONFigure:HIVOltage:ENable?"
-#define C400_MSG_HIVO_ENABLE_SET "CONFigure:HIVOltage:ENable "
-#define C400_MSG_PERIOD_ASK "CONFigure:PERiod?"
-#define C400_MSG_PERIOD_SET "CONFigure:PERiod "
-#define C400_MSG_POLARITY_ASK "CONFigure:POLarity"
-#define C400_MSG_POLARITY_SET "CONFigure:POLarity "
-#define C400_MSG_PULSER_ASK "CONFigure:PULser?"
-#define C400_MSG_PULSER_SET "CONFigure:PULser "
-#define C400_MSG_ACQUIRE_SET "INITiate"
-#define C400_MSG_ABORT_SET "ABORt"
-#define C400_MSG_BUFFER_ASK "TRIGger:BUFfer?"
-#define C400_MSG_BUFFER_SET "TRIGger:BUFfer "
-#define C400_MSG_BURST_ASK "TRIGger:BURst?"
-#define C400_MSG_BURST_SET "TRIGger:BURst "
-#define C400_MSG_COUNTS_ASK "FETch:COUNts?"
-#define C400_MSG_ENCODER_ASK "FETch:ENCOder?"
-#define C400_MSG_TRIGGER_MODE_ASK "TRIGger:MODE?"
-#define C400_MSG_TRIGGER_MODE_SET "TRIGger:MODE "
-#define C400_MSG_TRIGGER_POLARITY_ASK "TRIGger:POLarity?"
-#define C400_MSG_TRIGGER_POLARITY_SET "TRIGger:POLarity "
-#define C400_MSG_TRIGGER_START_ASK "TRIGger:SOURce:STARt?"
-#define C400_MSG_TRIGGER_START_SET "TRIGger:SOURce:STARt "
-#define C400_MSG_TRIGGER_STOP_ASK "TRIGger:SOURce:STOP?"
-#define C400_MSG_TRIGGER_STOP_SET "TRIGger:SOURce:STOP "
-#define C400_MSG_TRIGGER_PAUSE_ASK "TRIGger:SOURce:PAUSE?"
-#define C400_MSG_TRIGGER_PAUSE_SET "TRIGger:SOURce:PAUSE "
-#define C400_MSG_SYSTEM_IPMODE_ASK "SYSTem:COMMunication:IPMODE?"
-#define C400_MSG_SYSTEM_IPMODE_SET "SYSTem:COMMunication:IPMODE "
-
-#define buffer_array_size 65536*5
-
 void update_counts(void *drvPvt);
 static const char *driverName = "c400driver";
-static std::string trigger_mode_mbbo[]={"CUSTom", "INTernal", "EXTERNAL_START", "EXTERNAL_START_STOP",
-                                        "EXTERNAL_START_HOLD", "EXTERNAL_WINDOWED", "DISCRIMINATOR_SWEEP"};
-static std::string system_ipmode_mbbo[]={"DHCP", "Static"};
 
 c400drv::c400drv(const char *portName, char *ip)
    : asynPortDriver(portName,
@@ -85,8 +40,6 @@ c400drv::c400drv(const char *portName, char *ip)
 {
     asynStatus status;
     const char *functionName = "c400drv";
-    int maxPoints = buffer_array_size;
-    pData_ = (epicsFloat64 *)calloc(maxPoints, sizeof(epicsFloat64));
 
     createParam(P_DACString1, asynParamFloat64, &P_DAC1);
     createParam(P_DACString2, asynParamFloat64, &P_DAC2);
@@ -130,24 +83,28 @@ c400drv::c400drv(const char *portName, char *ip)
     createParam(P_TRIGGER_STOPString, asynParamInt32, &P_TRIGGER_STOP);
     createParam(P_TRIGGER_PAUSEString, asynParamInt32, &P_TRIGGER_PAUSE);
     createParam(P_SYSTEM_IPMODEString, asynParamInt32, &P_SYSTEM_IPMODE);
-    createParam(P_READ_BUFFERString, asynParamFloat64Array,  &P_READ_BUFFER);
+    createParam(P_READ_BUFFER1String, asynParamFloat64Array,  &P_READ_BUFFER1);
+    createParam(P_READ_BUFFER2String, asynParamFloat64Array,  &P_READ_BUFFER2);
+    createParam(P_READ_BUFFER3String, asynParamFloat64Array,  &P_READ_BUFFER3);
+    createParam(P_READ_BUFFER4String, asynParamFloat64Array,  &P_READ_BUFFER4);
+    createParam(P_READ_BUFFER_TIMEString, asynParamFloat64Array,  &P_READ_BUFFER_TIME);
 
     pasynOctetSyncIO->connect(ip, 0, &pasynUserEcho, NULL);
-    pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
-    pasynOctetSyncIO->setOutputEos(pasynUserEcho, "\n", strlen("\n"));
+    pasynOctetSyncIO->setInputEos(pasynUserEcho,  "\r\n", strlen("\r\n"));
+    pasynOctetSyncIO->setOutputEos(pasynUserEcho, "\n",   strlen("\n"));
 
     //Set default TRIGGER MODE as internal
-    set_mbbo(C400_MSG_TRIGGER_MODE_SET, trigger_mode_mbbo, 1); 
-    setIntegerParam (P_TRIGGER_MODE,      1);
+    //set_mbbo(C400_MSG_TRIGGER_MODE_SET, trigger_mode_mbbo, 1); 
+    //setIntegerParam (P_TRIGGER_MODE,      1);
 
     //Abort any counting while IOC is booting
     send_to_equipment(C400_MSG_ABORT_SET);
 
     //Set counter to 0 as default
-    setDoubleParam (P_COUNT1,          0);
-    setDoubleParam (P_COUNT2,          0);
-    setDoubleParam (P_COUNT3,          0);
-    setDoubleParam (P_COUNT4,          0);
+    setDoubleParam (P_COUNT1, 0);
+    setDoubleParam (P_COUNT2, 0);
+    setDoubleParam (P_COUNT3, 0);
+    setDoubleParam (P_COUNT4, 0);
 
     status = (asynStatus) callParamCallbacks();
     status = (asynStatus)(epicsThreadCreate("c400countTask",
@@ -177,32 +134,49 @@ void c400drv::update_counts(){
     int is_counting;
     double acquire_period;
     int buffer_size;
-    int update_step = 400; // Buffer only update in a step of 400 counts
     double res;
 
     while (true){
         getIntegerParam(P_ACQUIRE, &is_counting);
         getIntegerParam(P_BUFFER, &buffer_size);
         getDoubleParam(P_PERIOD, &acquire_period);
+
         if (is_counting and buffer_size == 0){
             get_n_set_4_channels(C400_MSG_COUNTS_ASK, P_COUNT1, P_COUNT2, 
                                 P_COUNT3, P_COUNT4, 2,3,4,5);
             res = get_parsed_response(send_to_equipment(C400_MSG_ENCODER_ASK), 1);
-            setDoubleParam (P_ENCODER,          res);
-            callParamCallbacks();
+            setDoubleParam (P_ENCODER, res);
         }
-        else if (is_counting and buffer_size != 0){
+        else if (is_counting and buffer_size < buffer_array_size and buffer_size != 0){
             // lock();
-            for (int i = 0; i < buffer_array_size; ++i)  // Reset the array
-                pData_[i] = 0;
-            sleep(acquire_period*update_step + 10); // 100% Empirical, give it a time to start the measure
+            pData_ch1 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
+            pData_ch2 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
+            pData_ch3 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
+            pData_ch4 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
+            pData_time = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
+            for (int i = 0; i < buffer_size; ++i) {  // Reset the array
+                pData_ch1[i] = 0;
+                pData_ch2[i] = 0;
+                pData_ch3[i] = 0;
+                pData_ch4[i] = 0;    
+            }
             update_buffer();
-            // sleep(acquire_period*buffer_size);
             // unlock();
-            setIntegerParam (P_ACQUIRE,      0);
-            callParamCallbacks();
+            setIntegerParam (P_ACQUIRE, 0);
+            
         }
-        sleep(acquire_period*0.9);
+        callParamCallbacks();
+    }
+
+    while (false){
+        getIntegerParam(P_ACQUIRE, &is_counting);
+        if (is_counting){
+            sleep(0.01*2000);
+            pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n\r\n", 1);
+            send_to_equipment("FETch:COUNts? 2000");
+            pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", 1);
+        }
+        callParamCallbacks();   
     }
 }
 
@@ -665,13 +639,31 @@ asynStatus c400drv::readFloat64Array(asynUser *pasynUser, epicsFloat64 *value,
 
     // std::cout << "im inside readFloatArray" << std::endl;
 
-    if (function == P_READ_BUFFER) {
-        // memcpy(value, pData_, ncopy*sizeof(epicsFloat64));
-        // *nIn = ncopy;
-        ncopy = 100;
-        memcpy(value, pData_, ncopy*sizeof(epicsFloat64));
+    if (function == P_READ_BUFFER1) {
+        // ncopy = 100;
+        //memcpy(value, pData_ch1, ncopy*sizeof(epicsFloat64));
+        memcpy(value, pData_ch1, sizeof(epicsFloat64));
         
     }
+    else if (function == P_READ_BUFFER2) {
+        // ncopy = 100;
+        //memcpy(value, pData_ch1, ncopy*sizeof(epicsFloat64));
+        memcpy(value, pData_ch2, sizeof(epicsFloat64));
+        
+    }
+    else if (function == P_READ_BUFFER3) {
+        // ncopy = 100;
+        //memcpy(value, pData_ch1, ncopy*sizeof(epicsFloat64));
+        memcpy(value, pData_ch3, sizeof(epicsFloat64));
+        
+    }
+    else if (function == P_READ_BUFFER4) {
+        // ncopy = 100;
+        //memcpy(value, pData_ch1, ncopy*sizeof(epicsFloat64));
+        memcpy(value, pData_ch4, sizeof(epicsFloat64));
+        
+    }
+
     if (status)
         epicsSnprintf(pasynUser->errorMessage, pasynUser->errorMessageSize,
                   "%s:%s: status=%d, function=%d",
@@ -1110,20 +1102,14 @@ void c400drv::set_mbbo(const char *command_set, const std::string *mbbo_list, in
 
 void c400drv::update_buffer(){
     int end_loop_flag = 1;
-    int number_of_ended_flag_in_a_row = 0; // wait for -401,"Requested data not yet collected" happends three times before breaking the loop
-    int n_args = 5; // Number of args to get from the parsed message
-    int number_of_lines_in_buffer_message = 15; // In general, the number of lines is 15
     int p_data_array_pos = 0; // Position in the waveform array to be updated in the loop
-    double temp_array[20]; // array to hold the data that is going to be placed in the PV array
-    int buffer_size; 
-    double acquire_period;
+    double temp_array[20]; // array to hold the data that is going to be placed in the PV array 
     std::string data_not_collected_code = "-401,";
-    std::string val; // Placeholder for the retrieved equipmente message
     std::string base_msg = "FETch:COUNts? ";
+    std::string val; // Placeholder for the retrieved equipmente message
+    int buffer_size;
     std::string get_full_buffer_str;
-
     getIntegerParam (P_BUFFER,      &buffer_size);
-    getDoubleParam (P_PERIOD,      &acquire_period);
     get_full_buffer_str = base_msg + std::__cxx11::to_string(buffer_size);
     // Need to parse several lines, each one ending with "\r\n"
     // The equipment also return a blank line at the end, wich means that the last line is \r\n\r\n
@@ -1133,8 +1119,7 @@ void c400drv::update_buffer(){
     // Return to the standard input eos afterwards 
 
     while (end_loop_flag){
-        sleep(number_of_lines_in_buffer_message*acquire_period); // Wait for the measure to complete
-        
+
         pasynOctetSyncIO->setInputEos(pasynUserEcho, "\n\r", strlen("\n\r"));
         val = send_to_equipment(get_full_buffer_str.c_str());
         pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
@@ -1142,37 +1127,42 @@ void c400drv::update_buffer(){
         std::istringstream iss(val);
         for (std::string line; std::getline(iss, line); ){
             const char* first_5_char = line.substr(0, 5).c_str();
+
             std::cout << "first 5 char: " << first_5_char << std::endl;
+            std::cout << line << std::endl;
+
             if (strcmp(first_5_char, "FETch") == 0){
                 continue;
             }
             else if (strcmp(first_5_char,  data_not_collected_code.c_str()) == 0){
-                number_of_ended_flag_in_a_row++;
-                if (number_of_ended_flag_in_a_row > 3){
+                if (p_data_array_pos == buffer_size){
                     end_loop_flag = 0;
                     break;
                 }
                 continue;
             }
+            else {
+                parse_counts(temp_array, line);
 
-            std::cout << line << std::endl;
-            parse_counts(temp_array, line);
-            for (int i=1; i<=n_args; i++){
-                pData_[p_data_array_pos] = temp_array[i];
+                pData_ch1[p_data_array_pos] = temp_array[1];
+                pData_ch2[p_data_array_pos] = temp_array[2];
+                pData_ch3[p_data_array_pos] = temp_array[3];
+                pData_ch4[p_data_array_pos] = temp_array[4];
+                pData_time[p_data_array_pos] = temp_array[5];
+
                 // pData_[p_data_array_pos] = p_data_array_pos;
-                std::cout << "Pdata pos " << p_data_array_pos << " Array data "  << pData_[p_data_array_pos] << std::endl;
+                //std::cout << "Pdata pos " << p_data_array_pos << " Array data "  << pData_[p_data_array_pos] << std::endl;
                 p_data_array_pos ++;
             }
-            number_of_ended_flag_in_a_row = 0;
         }
     }
     std::cout << "callback to array" << std::endl;
-    doCallbacksFloat64Array(pData_, buffer_array_size,  P_READ_BUFFER, 0);
+    doCallbacksFloat64Array(pData_ch1, buffer_size,  P_READ_BUFFER1, 0);
+    doCallbacksFloat64Array(pData_ch2, buffer_size,  P_READ_BUFFER2, 0);
+    doCallbacksFloat64Array(pData_ch3, buffer_size,  P_READ_BUFFER3, 0);
+    doCallbacksFloat64Array(pData_ch4, buffer_size,  P_READ_BUFFER4, 0);
+    doCallbacksFloat64Array(pData_time,buffer_size,  P_READ_BUFFER_TIME, 0);
 }
-
-
-
-
 
 //--------------------------------------------------------
 

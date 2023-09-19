@@ -46,7 +46,58 @@
 #define P_TRIGGER_STOPString            "TRIGGER_STOP"        /* asynInt32,    r/w */
 #define P_TRIGGER_PAUSEString           "TRIGGER_PAUSE"       /* asynInt32,    r/w */
 #define P_SYSTEM_IPMODEString           "SYSTEM_IPMODE"       /* asynInt32,    r/w */
-#define P_READ_BUFFERString             "READ_BUFFER"         /* asynFloat64Array,  r/o */
+#define P_READ_BUFFER1String            "READ_BUFFER1"         /* asynFloat64Array,  r/o */
+#define P_READ_BUFFER2String            "READ_BUFFER2"         /* asynFloat64Array,  r/o */
+#define P_READ_BUFFER3String            "READ_BUFFER3"         /* asynFloat64Array,  r/o */
+#define P_READ_BUFFER4String            "READ_BUFFER4"         /* asynFloat64Array,  r/o */
+#define P_READ_BUFFER_TIMEString        "READ_BUFFER_TIME"     /* asynFloat64Array,  r/o */
+
+#define TIMEOUT 2.0 // Scintillator response timeout
+#define C400_MSG_DAC_ASK "CONFigure:DAC?"
+#define C400_MSG_DAC_SET "CONFigure:DAC "
+#define C400_MSG_DEAD_ASK "CONFigure:DEADtime?"
+#define C400_MSG_DEAD_SET "CONFigure:DEADtime "
+#define C400_MSG_DHI_ASK "CONFigure:DHI?"
+#define C400_MSG_DHI_SET "CONFigure:DHI "
+#define C400_MSG_DLO_ASK "CONFigure:DLO?"
+#define C400_MSG_DLO_SET "CONFigure:DLO "
+#define C400_MSG_HIVO_VOLTS_ASK "CONFigure:HIVOltage:VOLts?"
+#define C400_MSG_HIVO_VOLTS_SET "CONFigure:HIVOltage:VOLts "
+#define C400_MSG_HIVO_ENABLE_ASK "CONFigure:HIVOltage:ENable?"
+#define C400_MSG_HIVO_ENABLE_SET "CONFigure:HIVOltage:ENable "
+#define C400_MSG_PERIOD_ASK "CONFigure:PERiod?"
+#define C400_MSG_PERIOD_SET "CONFigure:PERiod "
+#define C400_MSG_POLARITY_ASK "CONFigure:POLarity"
+#define C400_MSG_POLARITY_SET "CONFigure:POLarity "
+#define C400_MSG_PULSER_ASK "CONFigure:PULser?"
+#define C400_MSG_PULSER_SET "CONFigure:PULser "
+#define C400_MSG_ACQUIRE_SET "INITiate"
+#define C400_MSG_ABORT_SET "ABORt"
+#define C400_MSG_BUFFER_ASK "TRIGger:BUFfer?"
+#define C400_MSG_BUFFER_SET "TRIGger:BUFfer "
+#define C400_MSG_BURST_ASK "TRIGger:BURst?"
+#define C400_MSG_BURST_SET "TRIGger:BURst "
+#define C400_MSG_COUNTS_ASK "FETch:COUNts?"
+#define C400_MSG_ENCODER_ASK "FETch:ENCOder?"
+#define C400_MSG_DIGITAL_ASK "FETch:DIGital?"
+#define C400_MSG_TRIGGER_MODE_ASK "TRIGger:MODE?"
+#define C400_MSG_TRIGGER_MODE_SET "TRIGger:MODE "
+#define C400_MSG_TRIGGER_POLARITY_ASK "TRIGger:POLarity?"
+#define C400_MSG_TRIGGER_POLARITY_SET "TRIGger:POLarity "
+#define C400_MSG_TRIGGER_START_ASK "TRIGger:SOURce:STARt?"
+#define C400_MSG_TRIGGER_START_SET "TRIGger:SOURce:STARt "
+#define C400_MSG_TRIGGER_STOP_ASK "TRIGger:SOURce:STOP?"
+#define C400_MSG_TRIGGER_STOP_SET "TRIGger:SOURce:STOP "
+#define C400_MSG_TRIGGER_PAUSE_ASK "TRIGger:SOURce:PAUSE?"
+#define C400_MSG_TRIGGER_PAUSE_SET "TRIGger:SOURce:PAUSE "
+#define C400_MSG_SYSTEM_IPMODE_ASK "SYSTem:COMMunication:IPMODE?"
+#define C400_MSG_SYSTEM_IPMODE_SET "SYSTem:COMMunication:IPMODE "
+
+#define buffer_array_size 65536
+
+static std::string trigger_mode_mbbo[]={"CUSTom", "INTernal", "EXTERNAL_START", "EXTERNAL_START_STOP",
+                                        "EXTERNAL_START_HOLD", "EXTERNAL_WINDOWED", "DISCRIMINATOR_SWEEP"};
+static std::string system_ipmode_mbbo[]={"DHCP", "Static"};
 
 /** Class that demonstrates the use of the asynPortDriver base class to greatly simplify the task
   * of writing an asyn port driver.
@@ -113,11 +164,20 @@ protected:
     int P_TRIGGER_STOP;
     int P_TRIGGER_PAUSE;
     int P_SYSTEM_IPMODE;
-    int P_READ_BUFFER;
+    int P_READ_BUFFER1;
+    int P_READ_BUFFER2;
+    int P_READ_BUFFER3;
+    int P_READ_BUFFER4;
+    int P_READ_BUFFER_TIME;
 
 private:
     asynUser *pasynUserEcho;
     epicsFloat64 *pData_;
+    epicsFloat64 *pData_ch1;
+    epicsFloat64 *pData_ch2;
+    epicsFloat64 *pData_ch3;
+    epicsFloat64 *pData_ch4;
+    epicsFloat64 *pData_time;
     // float get_channel_val(std::string val, int channel, std::string search_for=" ", int size_sep=3);
     float get_parsed_response(std::string val, int n_element, std::string delimiter = ",");
     std::string send_to_equipment(const char *msg_ptr);
