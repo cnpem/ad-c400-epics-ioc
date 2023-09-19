@@ -133,6 +133,7 @@ void update_counts(void *drvPvt)
 }
 
 void c400drv::update_counts(){
+    asynStatus status = asynSuccess;
     int is_counting;
     double acquire_period;
     int buffer_size;
@@ -146,7 +147,7 @@ void c400drv::update_counts(){
         if (is_counting and buffer_size == 0){
             get_n_set_4_channels(C400_MSG_COUNTS_ASK, P_COUNT1, P_COUNT2, 
                                 P_COUNT3, P_COUNT4, 2,3,4,5);
-            res = get_parsed_response(C400_MSG_ENCODER_ASK, 1);
+            status = get_to_equipment(C400_MSG_ENCODER_ASK, 1, res);
             setDoubleParam (P_ENCODER, res);
         }
         else if (is_counting and buffer_size < buffer_array_size and buffer_size != 0){
@@ -160,7 +161,8 @@ void c400drv::update_counts(){
                 pData_ch1[i] = 0;
                 pData_ch2[i] = 0;
                 pData_ch3[i] = 0;
-                pData_ch4[i] = 0;    
+                pData_ch4[i] = 0;
+                pData_time[i] = 0;
             }
             update_buffer();
             // unlock();
@@ -170,16 +172,6 @@ void c400drv::update_counts(){
         callParamCallbacks();
     }
 
-    while (false){
-        getIntegerParam(P_ACQUIRE, &is_counting);
-        if (is_counting){
-            sleep(0.01*2000);
-            pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n\r\n", 1);
-            send_to_equipment("FETch:COUNts? 2000");
-            pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", 1);
-        }
-        callParamCallbacks();   
-    }
 }
 
 asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
@@ -266,23 +258,23 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
         setIntegerParam (P_SYSTEM_IPMODE,      value);
     }
     else if (function == P_TRIGGER_POLARITY){
-        result = set_direct(C400_MSG_TRIGGER_POLARITY_SET, C400_MSG_TRIGGER_POLARITY_ASK, 0, value);
+        status = set_to_equipment(C400_MSG_TRIGGER_POLARITY_SET, C400_MSG_TRIGGER_POLARITY_ASK, 0, value, result);
         setIntegerParam (P_TRIGGER_POLARITY,      result);
     }
     else if (function == P_TRIGGER_START){
-        result = set_direct(C400_MSG_TRIGGER_START_SET, C400_MSG_TRIGGER_START_ASK, 0, value);
+        status = set_to_equipment(C400_MSG_TRIGGER_START_SET, C400_MSG_TRIGGER_START_ASK, 0, value, result);
         setIntegerParam (P_TRIGGER_START,      result);
     }
     else if (function == P_TRIGGER_STOP){
-        result = set_direct(C400_MSG_TRIGGER_STOP_SET, C400_MSG_TRIGGER_STOP_ASK, 0, value);
+        status = set_to_equipment(C400_MSG_TRIGGER_STOP_SET, C400_MSG_TRIGGER_STOP_ASK, 0, value, result);
         setIntegerParam (P_TRIGGER_STOP,      result);
     }
     else if (function == P_TRIGGER_PAUSE){
-        result = set_direct(C400_MSG_TRIGGER_PAUSE_SET, C400_MSG_TRIGGER_PAUSE_ASK, 0, value);
+        status = set_to_equipment(C400_MSG_TRIGGER_PAUSE_SET, C400_MSG_TRIGGER_PAUSE_ASK, 0, value, result);
         setIntegerParam (P_TRIGGER_PAUSE,      result);
     }
     else if (function == P_BUFFER){
-        result = set_direct(C400_MSG_BUFFER_SET, C400_MSG_BUFFER_ASK, 0, value);
+        status = set_to_equipment(C400_MSG_BUFFER_SET, C400_MSG_BUFFER_ASK, 0, value, result);
         setIntegerParam (P_BUFFER,      value);
     }
 
@@ -327,23 +319,23 @@ asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
         status = (asynStatus) callParamCallbacks();
     }
     if (function == P_DAC1) {
-        result = set_direct(C400_MSG_DAC_SET, C400_MSG_DAC_ASK, 1, value);
+        status = set_to_equipment(C400_MSG_DAC_SET, C400_MSG_DAC_ASK, 1, value, result);
         setDoubleParam (P_DAC1,      result);
     }
     else if (function == P_DAC2){
-        result = set_direct(C400_MSG_DAC_SET, C400_MSG_DAC_ASK, 2, value);
+        status = set_to_equipment(C400_MSG_DAC_SET, C400_MSG_DAC_ASK, 2, value, result);
         setDoubleParam (P_DAC2,      result);
     }
     else if (function == P_DAC3){
-        result = set_direct(C400_MSG_DAC_SET, C400_MSG_DAC_ASK, 3, value);
+        status = set_to_equipment(C400_MSG_DAC_SET, C400_MSG_DAC_ASK, 3, value, result);
         setDoubleParam (P_DAC3,      result);
     }
     else if (function == P_DAC4){
-        result = set_direct(C400_MSG_DAC_SET, C400_MSG_DAC_ASK, 4, value);
+        status = set_to_equipment(C400_MSG_DAC_SET, C400_MSG_DAC_ASK, 4, value, result);
         setDoubleParam (P_DAC4,      result);
     }
     else if (function == P_DEAD){
-        result = set_direct(C400_MSG_DEAD_SET, C400_MSG_DEAD_ASK, 0, value);
+        status = set_to_equipment(C400_MSG_DEAD_SET, C400_MSG_DEAD_ASK, 0, value, result);
         setDoubleParam (P_DEAD,      value);
     }
     else if (function == P_DHI1) {
@@ -407,8 +399,8 @@ asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
         setDoubleParam (P_HIVO_VOLTS4,      result);
     }
     else if (function == P_PERIOD){
-        result = set_direct(C400_MSG_PERIOD_SET, C400_MSG_PERIOD_ASK, 0, value);
-        setDoubleParam (P_PERIOD,      value);
+        status = set_to_equipment(C400_MSG_PERIOD_SET, C400_MSG_PERIOD_ASK, 0, value, result);
+        setDoubleParam (P_PERIOD,      result);
     }
     else if (function == P_PULSER_Period) {
         result = set_2_vals(C400_MSG_PULSER_SET, C400_MSG_PULSER_ASK, 
@@ -421,8 +413,8 @@ asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
         setDoubleParam (P_PULSER_Width,      result);
     }
     else if (function == P_BURST){
-        result = set_direct(C400_MSG_BURST_SET, C400_MSG_BURST_ASK, 0, value);
-        setDoubleParam (P_BURST,      value);
+        status = set_to_equipment(C400_MSG_BURST_SET, C400_MSG_BURST_ASK, 0, value, result);
+        setDoubleParam (P_BURST,      result);
     }
 
     if (was_counting){
@@ -440,59 +432,47 @@ asynStatus c400drv::readInt32(asynUser *pasynUser, epicsInt32 *value)
 {
     int function = pasynUser->reason;
     asynStatus status = asynSuccess;
-    int addr = 0;
     const char *paramName;
     const char* functionName = "readInt32";
     double res;
-    string cmd_msg;
-    cout << "Read" << endl;
-    /* Get channel for possible use */
-    status = getAddress(pasynUser, &addr);
-    if (status) {
-        epicsSnprintf(pasynUser->errorMessage, pasynUser->errorMessageSize,
-                "%s:%s: status=%d, function=%d, name=%s",
-                driverName, functionName, status, function, paramName);
-        return status;
-    }
-    /* Fetch the parameter string name for possible use in debugging */
+    
     getParamName(function, &paramName);
-
     status = asynPortDriver::readInt32(pasynUser, value);
 
     if (function == P_HIVO_ENABLE1) {
-        res = get_parsed_response(C400_MSG_HIVO_ENABLE_ASK, 1);
+        status = get_to_equipment(C400_MSG_HIVO_ENABLE_ASK, 1, res);
         setIntegerParam (P_HIVO_ENABLE1,          res);
     }
     else if (function == P_HIVO_ENABLE2) {
-        res = get_parsed_response(C400_MSG_HIVO_ENABLE_ASK, 2);
+        status = get_to_equipment(C400_MSG_HIVO_ENABLE_ASK, 2, res);
         setIntegerParam (P_HIVO_ENABLE2,          res);
     }
     else if (function == P_HIVO_ENABLE3) {
-        res = get_parsed_response(C400_MSG_HIVO_ENABLE_ASK, 3);
+        status = get_to_equipment(C400_MSG_HIVO_ENABLE_ASK, 3, res);
         setIntegerParam (P_HIVO_ENABLE3,          res);
     }
     else if (function == P_HIVO_ENABLE4) {
-        res = get_parsed_response(C400_MSG_HIVO_ENABLE_ASK, 4);
+        status = get_to_equipment(C400_MSG_HIVO_ENABLE_ASK, 4, res);
         setIntegerParam (P_HIVO_ENABLE4,          res);
     }
     else if (function == P_POLARITY1) {
-        res = get_parsed_response(C400_MSG_POLARITY_ASK, 1);
+        status = get_to_equipment(C400_MSG_POLARITY_ASK, 1, res);
         setIntegerParam (P_POLARITY1,          res);
     }
     else if (function == P_POLARITY2) {
-        res = get_parsed_response(C400_MSG_POLARITY_ASK, 2);
+        status = get_to_equipment(C400_MSG_POLARITY_ASK, 2, res);
         setIntegerParam (P_POLARITY2,          res);
     }
     else if (function == P_POLARITY3) {
-        res = get_parsed_response(C400_MSG_POLARITY_ASK, 3);
+        status = get_to_equipment(C400_MSG_POLARITY_ASK, 3, res);
         setIntegerParam (P_POLARITY3,          res);
     }
     else if (function == P_POLARITY4) {
-        res = get_parsed_response(C400_MSG_POLARITY_ASK, 4);
+        status = get_to_equipment(C400_MSG_POLARITY_ASK, 4, res);
         setIntegerParam (P_POLARITY4,          res);
     }
     else if (function == P_BUFFER){
-        res = get_parsed_response(C400_MSG_BUFFER_ASK, 1);
+        status = get_to_equipment(C400_MSG_BUFFER_ASK, 1, res);
         setIntegerParam (P_BUFFER,          res);
     }
     else {
@@ -514,107 +494,95 @@ asynStatus c400drv::readFloat64(asynUser *pasynUser, epicsFloat64 *value)
 {
     int function = pasynUser->reason;
     asynStatus status = asynSuccess;
-    int addr = 0;
     const char *paramName;
     const char* functionName = "readFloat64";
     double res;
-    string cmd_msg;
-    cout << "Read" << endl;
-    /* Get channel for possible use */
-    status = getAddress(pasynUser, &addr);
-    if (status) {
-        epicsSnprintf(pasynUser->errorMessage, pasynUser->errorMessageSize,
-                "%s:%s: status=%d, function=%d, name=%s",
-                driverName, functionName, status, function, paramName);
-        return status;
-    }
-    /* Fetch the parameter string name for possible use in debugging */
-    getParamName(function, &paramName);
 
+    getParamName(function, &paramName);
     status = asynPortDriver::readFloat64(pasynUser, value);
 
     if (function == P_DAC1) {
-        res = get_parsed_response(C400_MSG_DAC_ASK, 1);
+        status = get_to_equipment(C400_MSG_DAC_ASK, 1, res);
         setDoubleParam (P_DAC1,          res);
     }
     else if (function == P_DAC2){
-        res = get_parsed_response(C400_MSG_DAC_ASK, 2);
+        status = get_to_equipment(C400_MSG_DAC_ASK, 2, res);
         setDoubleParam (P_DAC2,          res);
     }
     else if (function == P_DAC3){
-        res = get_parsed_response(C400_MSG_DAC_ASK, 3);
+        status = get_to_equipment(C400_MSG_DAC_ASK, 3, res);
         setDoubleParam (P_DAC3,          res);
     }
     else if (function == P_DAC4){
-        res = get_parsed_response(C400_MSG_DAC_ASK, 4);
+        status = get_to_equipment(C400_MSG_DAC_ASK, 4, res);
         setDoubleParam (P_DAC4,          res);
     }
     else if (function == P_DEAD){
-        res = get_parsed_response(C400_MSG_DEAD_ASK, 1);
+        status = get_to_equipment(C400_MSG_DEAD_ASK, 1, res);
         setDoubleParam (P_DEAD,          res);
     }
     else if (function == P_DHI1) {
-        res = get_parsed_response(C400_MSG_DHI_ASK, 1);
+        status = get_to_equipment(C400_MSG_DHI_ASK, 1, res);
         setDoubleParam (P_DHI1,          res);
     }
     else if (function == P_DHI2){
-        res = get_parsed_response(C400_MSG_DHI_ASK, 2);
+        status = get_to_equipment(C400_MSG_DHI_ASK, 2, res);
         setDoubleParam (P_DHI2,          res);
     }
     else if (function == P_DHI3){
-        res = get_parsed_response(C400_MSG_DHI_ASK, 3);
+        status = get_to_equipment(C400_MSG_DHI_ASK, 3, res);
         setDoubleParam (P_DHI3,          res);
     }
     else if (function == P_DHI4){
-        res = get_parsed_response(C400_MSG_DHI_ASK, 4);
+        status = get_to_equipment(C400_MSG_DHI_ASK, 4, res);
         setDoubleParam (P_DHI4,          res);
     }
     else if (function == P_DLO1) {
-        res = get_parsed_response(C400_MSG_DLO_ASK, 1);
+        status = get_to_equipment(C400_MSG_DLO_ASK, 1, res);
         setDoubleParam (P_DLO1,          res);
     }
     else if (function == P_DLO2){
-        res = get_parsed_response(C400_MSG_DLO_ASK, 2);
+        status = get_to_equipment(C400_MSG_DLO_ASK, 2, res);
         setDoubleParam (P_DLO2,          res);
     }
     else if (function == P_DLO3){
-        res = get_parsed_response(C400_MSG_DLO_ASK, 3);
+        status = get_to_equipment(C400_MSG_DLO_ASK, 3, res);
         setDoubleParam (P_DLO3,          res);
     }
     else if (function == P_DLO4){
-        res = get_parsed_response(C400_MSG_DLO_ASK, 4);
+        status = get_to_equipment(C400_MSG_DLO_ASK, 4, res);
         setDoubleParam (P_DLO4,          res);
     }
     else if (function == P_HIVO_VOLTS1) {
-        res = get_parsed_response(C400_MSG_HIVO_VOLTS_ASK, 1);
+        status = get_to_equipment(C400_MSG_HIVO_VOLTS_ASK, 1, res);
         setDoubleParam (P_HIVO_VOLTS1,          res);
     }
     else if (function == P_HIVO_VOLTS2){
-        res = get_parsed_response(C400_MSG_HIVO_VOLTS_ASK, 2);
+        status = get_to_equipment(C400_MSG_HIVO_VOLTS_ASK, 2, res);
         setDoubleParam (P_HIVO_VOLTS2,          res);
     }
     else if (function == P_HIVO_VOLTS3){
-        res = get_parsed_response(C400_MSG_HIVO_VOLTS_ASK, 3);
+        status = get_to_equipment(C400_MSG_HIVO_VOLTS_ASK, 3, res);
         setDoubleParam (P_HIVO_VOLTS3,          res);
     }
     else if (function == P_HIVO_VOLTS4){
-        res = get_parsed_response(C400_MSG_HIVO_VOLTS_ASK, 4);
+        status = get_to_equipment(C400_MSG_HIVO_VOLTS_ASK, 4, res);
         setDoubleParam (P_HIVO_VOLTS4,          res);
     }
     else if (function == P_PERIOD){
-        res = get_parsed_response(C400_MSG_PERIOD_ASK, 1);
+        status = get_to_equipment(C400_MSG_PERIOD_ASK, 1, res);
         setDoubleParam (P_PERIOD,          res);
     }
     else if (function == P_PULSER_Period) {
-        res = get_parsed_response(C400_MSG_PULSER_ASK, 1);
+        status = get_to_equipment(C400_MSG_PULSER_ASK, 1, res);
         setDoubleParam (P_PULSER_Period,          res);
     }
     else if (function == P_PULSER_Width) {
-        res = get_parsed_response(C400_MSG_PULSER_ASK, 2);
+        status = get_to_equipment(C400_MSG_PULSER_ASK, 2, res);
         setDoubleParam (P_PULSER_Width,          res);
     }
     else if (function == P_BURST){
-        res = get_parsed_response(C400_MSG_BURST_ASK, 1);
+        status = get_to_equipment(C400_MSG_BURST_ASK, 1, res);
         setDoubleParam (P_BURST,          res);
     }
 
@@ -626,6 +594,7 @@ asynStatus c400drv::readFloat64(asynUser *pasynUser, epicsFloat64 *value)
         asynPrint(pasynUser, ASYN_TRACEIO_DRIVER,
                 "%s:%s: function=%d, name=%s\n",
                 driverName, functionName, function, paramName);
+
     return status;
 }
 
@@ -642,26 +611,18 @@ asynStatus c400drv::readFloat64Array(asynUser *pasynUser, epicsFloat64 *value,
     // cout << "im inside readFloatArray" << endl;
 
     if (function == P_READ_BUFFER1) {
-        // ncopy = 100;
-        //memcpy(value, pData_ch1, ncopy*sizeof(epicsFloat64));
         memcpy(value, pData_ch1, sizeof(epicsFloat64));
         
     }
     else if (function == P_READ_BUFFER2) {
-        // ncopy = 100;
-        //memcpy(value, pData_ch1, ncopy*sizeof(epicsFloat64));
         memcpy(value, pData_ch2, sizeof(epicsFloat64));
         
     }
     else if (function == P_READ_BUFFER3) {
-        // ncopy = 100;
-        //memcpy(value, pData_ch1, ncopy*sizeof(epicsFloat64));
         memcpy(value, pData_ch3, sizeof(epicsFloat64));
         
     }
     else if (function == P_READ_BUFFER4) {
-        // ncopy = 100;
-        //memcpy(value, pData_ch1, ncopy*sizeof(epicsFloat64));
         memcpy(value, pData_ch4, sizeof(epicsFloat64));
         
     }
@@ -679,22 +640,22 @@ asynStatus c400drv::readFloat64Array(asynUser *pasynUser, epicsFloat64 *value,
     return status;
 }
 
-asynStatus c400drv::send_to_equipment(const char *writeBuffer, string &value)
+asynStatus c400drv::send_to_equipment(const char *writeBuffer, string &response)
 {
     asynStatus status = asynSuccess;
     size_t nRead, nActual;
     string null_str = "";
     int eomReason;
-    double readValue;    
+    double readValue;
     char readBuffer[10000];
 
     status = pasynOctetSyncIO->writeRead(pasynUserEcho, writeBuffer, strlen(writeBuffer), readBuffer,
                                      sizeof(readBuffer), TIMEOUT, &nActual, &nRead, &eomReason);
 
-    value = string(readBuffer);
-    
-    //cout << "status: " << status << endl;
-    //cout << "Buffer: " << readBuffer << endl;
+    response = string(readBuffer);
+
+    cout << "Status: " << status << endl;
+    cout << "Response: " << readBuffer << endl;
 
     return status;
 
@@ -713,13 +674,13 @@ asynStatus c400drv::send_to_equipment(const char *writeBuffer)
                                      sizeof(readBuffer), TIMEOUT, &nActual, &nRead, &eomReason);
 
     
-    cout << "status: " << status << endl;
-    cout << "Buffer: " << readBuffer << endl;
+    cout << "Status: " << status << endl;
+    cout << "Response: " << readBuffer << endl;
 
     return status;
 
 }
-float c400drv::get_parsed_response(const char *writeBuffer, int n_element)
+asynStatus c400drv::get_to_equipment(const char *writeBuffer, int n_element, double &response)
 {   
     asynStatus status = asynSuccess;
     string delimiter = ",";
@@ -730,97 +691,78 @@ float c400drv::get_parsed_response(const char *writeBuffer, int n_element)
 
     status = send_to_equipment(writeBuffer, val);
 
-    cout << "Entering msg: " << val << endl;
-    token = val.substr(0, val.find("\n")+1);
-    val = val.substr(token.length(), val.length() - token.length());
-    float res;
-    
-    result_array[0] = token;
-    int array_idx = 1;
-    while (array_idx < 12) {
-        pos = val.find(delimiter);
-        token = val.substr(0, pos);
-        result_array[array_idx] = token;
-        val.erase(0, pos + delimiter.length());
-        cout << "pos: " << pos << endl;
-        if (pos == -1){
-            result_array[array_idx] = val; //Append the last val
-            break;
-        }
-        array_idx++;
-    }
-    
-    if (result_array[n_element] == "P"){
-        cout << "Got: " << "P" << endl;
-        return 1;
-    }
-    else if (result_array[n_element] == "N"){
-        cout << "Got: " << "N" << endl;
-        return 0;
-    }
+    if (!status) {
 
-    try{
-        cout << "Value to convert: " << result_array[n_element] << endl;
-        return stof(result_array[n_element]);
+        token = val.substr(0, val.find("\n")+1);
+        val = val.substr(token.length(), val.length() - token.length());
+        
+        result_array[0] = token;
+        int array_idx = 1;
+        while (array_idx < 12) {
+            pos = val.find(delimiter);
+            token = val.substr(0, pos);
+            result_array[array_idx] = token;
+            val.erase(0, pos + delimiter.length());
+            if (pos == -1){
+                result_array[array_idx] = val; //Append the last val
+                break;
+            }
+            array_idx++;
+        }
+        
+        try {
+            if (result_array[n_element] == "P" or result_array[n_element] == "BNC") {
+                response = 1;
+            }
+            else if (result_array[n_element] == "N" or result_array[n_element] == "INTernal") {
+                response = 0;
+            }
+            else {
+                response = stof(result_array[n_element]);
+            }
+        }
+        catch (...){
+            response = 0;
+            return asynError;
+        }
+        return status;
     }
-    catch (...){
-        cout << "Error converting to float" << endl;
-        return 0;
+    else {
+        return status;
     }
 }
 
-
-double c400drv::set_direct(const char *command_set, const char *command_ask, int channel, double val)
+asynStatus c400drv::set_to_equipment(const char *command_set, const char *command_ask, int channel, double value, double &response)
 {
     // If 0 is passed to channel, them no specific channel is set
+    asynStatus status = asynSuccess;
     double res;
-    string res_str;
     string str_channel;
     string str_val;
-    string token;
     string cmd_msg_send;
-    string cmd_msg_read;
 
-    str_channel = __cxx11::to_string(channel);
-    str_val = __cxx11::to_string(val);
+    if (channel > 0){
+        str_channel = to_string(channel);
+        str_val = to_string(value);
 
-    if (channel){
         cmd_msg_send =  command_set + str_channel + " " + str_val;
-        send_to_equipment(cmd_msg_send.c_str());
-        cmd_msg_read = command_ask;
-        res = get_parsed_response(cmd_msg_read.c_str(), channel);
-        return res;
+        status = send_to_equipment(cmd_msg_send.c_str());
+        status = get_to_equipment(command_ask, channel, response);
     }
-
     else{
+        
         if (command_set==C400_MSG_TRIGGER_START_SET or command_set==C400_MSG_TRIGGER_STOP_SET or command_set==C400_MSG_TRIGGER_PAUSE_SET){
-            if (int(val)==0)
+            if (int(value)==0)
                 str_val = "INTernal";
-            else if (int(val)==1)
+            else if (int(value)==1)
                 str_val = "BNC";
         }
+
         cmd_msg_send =  command_set + str_val;
-        send_to_equipment(cmd_msg_send.c_str());
-        res_str = send_to_equipment(command_ask);
-        token = res_str.substr(0, res_str.find("\n")+1);
-        res_str = res_str.substr(token.length(), res_str.length() - token.length());
-        cout << res_str << endl;
-        
-        if (res_str=="INTernal")
-            return 0;
-        else if(res_str=="BNC")
-            return 1;
-
-        try{
-
-            return stof(res_str);
-        }
-        catch (...){
-            cout << "Error converting from str to float" << endl;
-            return 0;
-        }
-        
+        status = send_to_equipment(cmd_msg_send.c_str());
+        status = get_to_equipment(command_ask, 1, response);
     }
+    return status;
 }
 
 double c400drv::set_4_channels(const char *command_set, const char *command_ask, int param1, int param2, 
@@ -888,7 +830,7 @@ double c400drv::set_4_channels(const char *command_set, const char *command_ask,
         cmd_msg_read = command_ask;
 
 
-        res = get_parsed_response(cmd_msg_read.c_str(), channel);
+        status = get_to_equipment(cmd_msg_read.c_str(), channel, res);
 
         cout << "my res is: " << res << endl;
         return res;
@@ -974,7 +916,7 @@ double c400drv::set_4_channels_int(const char *command_set, const char *command_
                                         + str_val_ch3 + " " + str_val_ch4 + " ";
         send_to_equipment(cmd_msg_send.c_str());
         cmd_msg_read = command_ask;
-        res = get_parsed_response(cmd_msg_read.c_str(), channel);
+        status = get_to_equipment(cmd_msg_read.c_str(), channel, res);
         cout << "my res is: " << res << endl;
         return res;
 }
@@ -1036,9 +978,9 @@ double c400drv::set_2_vals(const char *command_set, const char *command_ask, int
         cmd_msg_read = command_ask;
 
         if (is_float)
-            res = get_parsed_response(cmd_msg_read.c_str(), channel);
+            status = get_to_equipment(cmd_msg_read.c_str(), channel, res);
         else
-            res = get_parsed_response(cmd_msg_read.c_str(), channel);
+            status = get_to_equipment(cmd_msg_read.c_str(), channel, res);
         cout << "my res is: " << res << endl;
         return res;
 }

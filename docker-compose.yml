@@ -1,0 +1,13 @@
+services:
+  ioc:
+    image: gitregistry.cnpem.br/sol/epicsapps/c400
+    build:
+      context: ./
+      dockerfile: docker/Dockerfile
+      target: dynamic-link
+      labels:
+        org.opencontainers.image.source: https://gitlab.cnpem.br/SOL/EpicsApps/c400.git
+      args:
+        REPONAME: c400
+        RUNDIR: /opt/c400
+        BUILD_STAGE_VERSION: latest

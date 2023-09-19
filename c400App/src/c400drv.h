@@ -172,25 +172,27 @@ protected:
 
 private:
     asynUser *pasynUserEcho;
-    epicsFloat64 *pData_;
     epicsFloat64 *pData_ch1;
     epicsFloat64 *pData_ch2;
     epicsFloat64 *pData_ch3;
     epicsFloat64 *pData_ch4;
     epicsFloat64 *pData_time;
 
-    asynStatus send_to_equipment(const char *writeBuffer, string &value);
+    asynStatus send_to_equipment(const char *writeBuffer, string &response);
     asynStatus send_to_equipment(const char *writeBuffer);
 
-    float get_parsed_response(const char *writeBuffer, int n_element);
-
+    asynStatus get_to_equipment(const char *writeBuffer, int n_element, double &response);
+    asynStatus set_to_equipment(const char *command_set, const char *command_ask, int channel, double value, double &response);
+    
     double set_4_channels(const char *command_set, const char *command_ask, int param1, 
                             int param2, int param3, int param4, int channel, double val);
+
     double set_4_channels_int(const char *command_set, const char *command_ask, int param1, 
                             int param2, int param3, int param4, int channel, double val, int to_string=0);
+
     double set_2_vals(const char *command_set, const char *command_ask, int param1, 
                             int param2, int channel, double val, int is_float=1, int to_string=0);
-    double set_direct(const char *command_set, const char *command_ask, int channel, double val);
+
     void get_n_set_4_channels(const char *command_ask, int param1, int param2, int param3, int param4, 
                                    int n_param1, int n_param2, int n_param3, int n_param4);
     void set_mbbo(const char *command_set, const string *mbbo_list, int mbbo_value);

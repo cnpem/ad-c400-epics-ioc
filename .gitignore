@@ -1,0 +1,11 @@
+db
+dbd
+O.*/
+bin
+lib
+include
+envPaths*
+auto_settings.sav*
+configure/*.local
+*.swp
+.vscode
