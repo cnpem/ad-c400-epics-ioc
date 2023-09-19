@@ -95,9 +95,9 @@
 
 #define buffer_array_size 65536
 
-static std::string trigger_mode_mbbo[]={"CUSTom", "INTernal", "EXTERNAL_START", "EXTERNAL_START_STOP",
+static string trigger_mode_mbbo[]={"CUSTom", "INTernal", "EXTERNAL_START", "EXTERNAL_START_STOP",
                                         "EXTERNAL_START_HOLD", "EXTERNAL_WINDOWED", "DISCRIMINATOR_SWEEP"};
-static std::string system_ipmode_mbbo[]={"DHCP", "Static"};
+static string system_ipmode_mbbo[]={"DHCP", "Static"};
 
 /** Class that demonstrates the use of the asynPortDriver base class to greatly simplify the task
   * of writing an asyn port driver.
@@ -178,9 +178,12 @@ private:
     epicsFloat64 *pData_ch3;
     epicsFloat64 *pData_ch4;
     epicsFloat64 *pData_time;
-    // float get_channel_val(std::string val, int channel, std::string search_for=" ", int size_sep=3);
-    float get_parsed_response(std::string val, int n_element, std::string delimiter = ",");
-    std::string send_to_equipment(const char *msg_ptr);
+
+    asynStatus send_to_equipment(const char *writeBuffer, string &value);
+    asynStatus send_to_equipment(const char *writeBuffer);
+
+    float get_parsed_response(const char *writeBuffer, int n_element);
+
     double set_4_channels(const char *command_set, const char *command_ask, int param1, 
                             int param2, int param3, int param4, int channel, double val);
     double set_4_channels_int(const char *command_set, const char *command_ask, int param1, 
@@ -190,7 +193,7 @@ private:
     double set_direct(const char *command_set, const char *command_ask, int channel, double val);
     void get_n_set_4_channels(const char *command_ask, int param1, int param2, int param3, int param4, 
                                    int n_param1, int n_param2, int n_param3, int n_param4);
-    void set_mbbo(const char *command_set, const std::string *mbbo_list, int mbbo_value);
+    void set_mbbo(const char *command_set, const string *mbbo_list, int mbbo_value);
     void update_buffer();
-    void parse_counts(double *result_array, std::string received_line);
+    void parse_counts(double *result_array, string received_line);
 };

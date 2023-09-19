@@ -7,6 +7,8 @@
 #include <unistd.h>
 #include <sstream>
 
+using namespace std;
+
 //EPICS's includes
 #include <epicsTypes.h>
 #include <epicsTime.h>
@@ -144,7 +146,7 @@ void c400drv::update_counts(){
         if (is_counting and buffer_size == 0){
             get_n_set_4_channels(C400_MSG_COUNTS_ASK, P_COUNT1, P_COUNT2, 
                                 P_COUNT3, P_COUNT4, 2,3,4,5);
-            res = get_parsed_response(send_to_equipment(C400_MSG_ENCODER_ASK), 1);
+            res = get_parsed_response(C400_MSG_ENCODER_ASK, 1);
             setDoubleParam (P_ENCODER, res);
         }
         else if (is_counting and buffer_size < buffer_array_size and buffer_size != 0){
@@ -310,7 +312,7 @@ asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
     int function = pasynUser->reason;
     asynStatus status = asynSuccess;
     epicsInt32 run;
-    std::cout << "Write" << std::endl;
+    cout << "Write" << endl;
     const char *paramName;
     const char* functionName = "writeFloat64";
     double result;
@@ -442,8 +444,8 @@ asynStatus c400drv::readInt32(asynUser *pasynUser, epicsInt32 *value)
     const char *paramName;
     const char* functionName = "readInt32";
     double res;
-    std::string cmd_msg;
-    std::cout << "Read" << std::endl;
+    string cmd_msg;
+    cout << "Read" << endl;
     /* Get channel for possible use */
     status = getAddress(pasynUser, &addr);
     if (status) {
@@ -458,39 +460,39 @@ asynStatus c400drv::readInt32(asynUser *pasynUser, epicsInt32 *value)
     status = asynPortDriver::readInt32(pasynUser, value);
 
     if (function == P_HIVO_ENABLE1) {
-        res = get_parsed_response(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 1);
+        res = get_parsed_response(C400_MSG_HIVO_ENABLE_ASK, 1);
         setIntegerParam (P_HIVO_ENABLE1,          res);
     }
     else if (function == P_HIVO_ENABLE2) {
-        res = get_parsed_response(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 2);
+        res = get_parsed_response(C400_MSG_HIVO_ENABLE_ASK, 2);
         setIntegerParam (P_HIVO_ENABLE2,          res);
     }
     else if (function == P_HIVO_ENABLE3) {
-        res = get_parsed_response(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 3);
+        res = get_parsed_response(C400_MSG_HIVO_ENABLE_ASK, 3);
         setIntegerParam (P_HIVO_ENABLE3,          res);
     }
     else if (function == P_HIVO_ENABLE4) {
-        res = get_parsed_response(send_to_equipment(C400_MSG_HIVO_ENABLE_ASK), 4);
+        res = get_parsed_response(C400_MSG_HIVO_ENABLE_ASK, 4);
         setIntegerParam (P_HIVO_ENABLE4,          res);
     }
     else if (function == P_POLARITY1) {
-        res = get_parsed_response(send_to_equipment(C400_MSG_POLARITY_ASK), 1);
+        res = get_parsed_response(C400_MSG_POLARITY_ASK, 1);
         setIntegerParam (P_POLARITY1,          res);
     }
     else if (function == P_POLARITY2) {
-        res = get_parsed_response(send_to_equipment(C400_MSG_POLARITY_ASK), 2);
+        res = get_parsed_response(C400_MSG_POLARITY_ASK, 2);
         setIntegerParam (P_POLARITY2,          res);
     }
     else if (function == P_POLARITY3) {
-        res = get_parsed_response(send_to_equipment(C400_MSG_POLARITY_ASK), 3);
+        res = get_parsed_response(C400_MSG_POLARITY_ASK, 3);
         setIntegerParam (P_POLARITY3,          res);
     }
     else if (function == P_POLARITY4) {
-        res = get_parsed_response(send_to_equipment(C400_MSG_POLARITY_ASK), 4);
+        res = get_parsed_response(C400_MSG_POLARITY_ASK, 4);
         setIntegerParam (P_POLARITY4,          res);
     }
     else if (function == P_BUFFER){
-        res = get_parsed_response(send_to_equipment(C400_MSG_BUFFER_ASK), 1);
+        res = get_parsed_response(C400_MSG_BUFFER_ASK, 1);
         setIntegerParam (P_BUFFER,          res);
     }
     else {
@@ -516,8 +518,8 @@ asynStatus c400drv::readFloat64(asynUser *pasynUser, epicsFloat64 *value)
     const char *paramName;
     const char* functionName = "readFloat64";
     double res;
-    std::string cmd_msg;
-    std::cout << "Read" << std::endl;
+    string cmd_msg;
+    cout << "Read" << endl;
     /* Get channel for possible use */
     status = getAddress(pasynUser, &addr);
     if (status) {
@@ -532,87 +534,87 @@ asynStatus c400drv::readFloat64(asynUser *pasynUser, epicsFloat64 *value)
     status = asynPortDriver::readFloat64(pasynUser, value);
 
     if (function == P_DAC1) {
-        res = get_parsed_response(send_to_equipment(C400_MSG_DAC_ASK), 1);
+        res = get_parsed_response(C400_MSG_DAC_ASK, 1);
         setDoubleParam (P_DAC1,          res);
     }
     else if (function == P_DAC2){
-        res = get_parsed_response(send_to_equipment(C400_MSG_DAC_ASK), 2);
+        res = get_parsed_response(C400_MSG_DAC_ASK, 2);
         setDoubleParam (P_DAC2,          res);
     }
     else if (function == P_DAC3){
-        res = get_parsed_response(send_to_equipment(C400_MSG_DAC_ASK), 3);
+        res = get_parsed_response(C400_MSG_DAC_ASK, 3);
         setDoubleParam (P_DAC3,          res);
     }
     else if (function == P_DAC4){
-        res = get_parsed_response(send_to_equipment(C400_MSG_DAC_ASK), 4);
+        res = get_parsed_response(C400_MSG_DAC_ASK, 4);
         setDoubleParam (P_DAC4,          res);
     }
     else if (function == P_DEAD){
-        res = get_parsed_response(send_to_equipment(C400_MSG_DEAD_ASK), 1);
+        res = get_parsed_response(C400_MSG_DEAD_ASK, 1);
         setDoubleParam (P_DEAD,          res);
     }
     else if (function == P_DHI1) {
-        res = get_parsed_response(send_to_equipment(C400_MSG_DHI_ASK), 1);
+        res = get_parsed_response(C400_MSG_DHI_ASK, 1);
         setDoubleParam (P_DHI1,          res);
     }
     else if (function == P_DHI2){
-        res = get_parsed_response(send_to_equipment(C400_MSG_DHI_ASK), 2);
+        res = get_parsed_response(C400_MSG_DHI_ASK, 2);
         setDoubleParam (P_DHI2,          res);
     }
     else if (function == P_DHI3){
-        res = get_parsed_response(send_to_equipment(C400_MSG_DHI_ASK), 3);
+        res = get_parsed_response(C400_MSG_DHI_ASK, 3);
         setDoubleParam (P_DHI3,          res);
     }
     else if (function == P_DHI4){
-        res = get_parsed_response(send_to_equipment(C400_MSG_DHI_ASK), 4);
+        res = get_parsed_response(C400_MSG_DHI_ASK, 4);
         setDoubleParam (P_DHI4,          res);
     }
     else if (function == P_DLO1) {
-        res = get_parsed_response(send_to_equipment(C400_MSG_DLO_ASK), 1);
+        res = get_parsed_response(C400_MSG_DLO_ASK, 1);
         setDoubleParam (P_DLO1,          res);
     }
     else if (function == P_DLO2){
-        res = get_parsed_response(send_to_equipment(C400_MSG_DLO_ASK), 2);
+        res = get_parsed_response(C400_MSG_DLO_ASK, 2);
         setDoubleParam (P_DLO2,          res);
     }
     else if (function == P_DLO3){
-        res = get_parsed_response(send_to_equipment(C400_MSG_DLO_ASK), 3);
+        res = get_parsed_response(C400_MSG_DLO_ASK, 3);
         setDoubleParam (P_DLO3,          res);
     }
     else if (function == P_DLO4){
-        res = get_parsed_response(send_to_equipment(C400_MSG_DLO_ASK), 4);
+        res = get_parsed_response(C400_MSG_DLO_ASK, 4);
         setDoubleParam (P_DLO4,          res);
     }
     else if (function == P_HIVO_VOLTS1) {
-        res = get_parsed_response(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 1);
+        res = get_parsed_response(C400_MSG_HIVO_VOLTS_ASK, 1);
         setDoubleParam (P_HIVO_VOLTS1,          res);
     }
     else if (function == P_HIVO_VOLTS2){
-        res = get_parsed_response(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 2);
+        res = get_parsed_response(C400_MSG_HIVO_VOLTS_ASK, 2);
         setDoubleParam (P_HIVO_VOLTS2,          res);
     }
     else if (function == P_HIVO_VOLTS3){
-        res = get_parsed_response(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 3);
+        res = get_parsed_response(C400_MSG_HIVO_VOLTS_ASK, 3);
         setDoubleParam (P_HIVO_VOLTS3,          res);
     }
     else if (function == P_HIVO_VOLTS4){
-        res = get_parsed_response(send_to_equipment(C400_MSG_HIVO_VOLTS_ASK), 4);
+        res = get_parsed_response(C400_MSG_HIVO_VOLTS_ASK, 4);
         setDoubleParam (P_HIVO_VOLTS4,          res);
     }
     else if (function == P_PERIOD){
-        res = get_parsed_response(send_to_equipment(C400_MSG_PERIOD_ASK), 1);
+        res = get_parsed_response(C400_MSG_PERIOD_ASK, 1);
         setDoubleParam (P_PERIOD,          res);
     }
     else if (function == P_PULSER_Period) {
-        res = get_parsed_response(send_to_equipment(C400_MSG_PULSER_ASK), 1);
+        res = get_parsed_response(C400_MSG_PULSER_ASK, 1);
         setDoubleParam (P_PULSER_Period,          res);
     }
     else if (function == P_PULSER_Width) {
-        res = get_parsed_response(send_to_equipment(C400_MSG_PULSER_ASK), 2);
+        res = get_parsed_response(C400_MSG_PULSER_ASK, 2);
         setDoubleParam (P_PULSER_Width,          res);
     }
     else if (function == P_BURST){
-        res = get_parsed_response(send_to_equipment(C400_MSG_BURST_ASK), 1);
+        res = get_parsed_response(C400_MSG_BURST_ASK, 1);
         setDoubleParam (P_BURST,          res);
     }
 
@@ -637,7 +639,7 @@ asynStatus c400drv::readFloat64Array(asynUser *pasynUser, epicsFloat64 *value,
     epicsTimeStamp timeStamp;
     const char *functionName = "readFloat64Array";
 
-    // std::cout << "im inside readFloatArray" << std::endl;
+    // cout << "im inside readFloatArray" << endl;
 
     if (function == P_READ_BUFFER1) {
         // ncopy = 100;
@@ -677,11 +679,32 @@ asynStatus c400drv::readFloat64Array(asynUser *pasynUser, epicsFloat64 *value,
     return status;
 }
 
-std::string c400drv::send_to_equipment(const char *writeBuffer)
+asynStatus c400drv::send_to_equipment(const char *writeBuffer, string &value)
 {
     asynStatus status = asynSuccess;
     size_t nRead, nActual;
-    std::string null_str = "";
+    string null_str = "";
+    int eomReason;
+    double readValue;    
+    char readBuffer[10000];
+
+    status = pasynOctetSyncIO->writeRead(pasynUserEcho, writeBuffer, strlen(writeBuffer), readBuffer,
+                                     sizeof(readBuffer), TIMEOUT, &nActual, &nRead, &eomReason);
+
+    value = string(readBuffer);
+    
+    //cout << "status: " << status << endl;
+    //cout << "Buffer: " << readBuffer << endl;
+
+    return status;
+
+}
+
+asynStatus c400drv::send_to_equipment(const char *writeBuffer)
+{
+    asynStatus status = asynSuccess;
+    size_t nRead, nActual;
+    string null_str = "";
     int eomReason;
     double readValue;    
     char readBuffer[10000];
@@ -690,17 +713,24 @@ std::string c400drv::send_to_equipment(const char *writeBuffer)
                                      sizeof(readBuffer), TIMEOUT, &nActual, &nRead, &eomReason);
 
     
-    std::cout << "status: " << status << std::endl;
-    std::cout << "Buffer: " << readBuffer << std::endl;
-    return std::string (readBuffer);
+    cout << "status: " << status << endl;
+    cout << "Buffer: " << readBuffer << endl;
+
+    return status;
 
 }
-float c400drv::get_parsed_response(std::string val, int n_element, std::string delimiter)
-{
+float c400drv::get_parsed_response(const char *writeBuffer, int n_element)
+{   
+    asynStatus status = asynSuccess;
+    string delimiter = ",";
     int pos = 0;
-    std::string result_array[15];
-    std::string token;
-    std::cout << "Entering msg: " << val << std::endl;
+    string result_array[15];
+    string token;
+    string val;
+
+    status = send_to_equipment(writeBuffer, val);
+
+    cout << "Entering msg: " << val << endl;
     token = val.substr(0, val.find("\n")+1);
     val = val.substr(token.length(), val.length() - token.length());
     float res;
@@ -712,7 +742,7 @@ float c400drv::get_parsed_response(std::string val, int n_element, std::string d
         token = val.substr(0, pos);
         result_array[array_idx] = token;
         val.erase(0, pos + delimiter.length());
-        std::cout << "pos: " << pos << std::endl;
+        cout << "pos: " << pos << endl;
         if (pos == -1){
             result_array[array_idx] = val; //Append the last val
             break;
@@ -721,20 +751,20 @@ float c400drv::get_parsed_response(std::string val, int n_element, std::string d
     }
     
     if (result_array[n_element] == "P"){
-        std::cout << "Got: " << "P" << std::endl;
+        cout << "Got: " << "P" << endl;
         return 1;
     }
     else if (result_array[n_element] == "N"){
-        std::cout << "Got: " << "N" << std::endl;
+        cout << "Got: " << "N" << endl;
         return 0;
     }
 
     try{
-        std::cout << "Value to convert: " << result_array[n_element] << std::endl;
-        return std::stof(result_array[n_element]);
+        cout << "Value to convert: " << result_array[n_element] << endl;
+        return stof(result_array[n_element]);
     }
     catch (...){
-        std::cout << "Error converting to float" << std::endl;
+        cout << "Error converting to float" << endl;
         return 0;
     }
 }
@@ -744,21 +774,21 @@ double c400drv::set_direct(const char *command_set, const char *command_ask, int
 {
     // If 0 is passed to channel, them no specific channel is set
     double res;
-    std::string res_str;
-    std::string str_channel;
-    std::string str_val;
-    std::string token;
-    std::string cmd_msg_send;
-    std::string cmd_msg_read;
+    string res_str;
+    string str_channel;
+    string str_val;
+    string token;
+    string cmd_msg_send;
+    string cmd_msg_read;
 
-    str_channel = std::__cxx11::to_string(channel);
-    str_val = std::__cxx11::to_string(val);
+    str_channel = __cxx11::to_string(channel);
+    str_val = __cxx11::to_string(val);
 
     if (channel){
         cmd_msg_send =  command_set + str_channel + " " + str_val;
         send_to_equipment(cmd_msg_send.c_str());
         cmd_msg_read = command_ask;
-        res = get_parsed_response(send_to_equipment(cmd_msg_read.c_str()), channel);
+        res = get_parsed_response(cmd_msg_read.c_str(), channel);
         return res;
     }
 
@@ -774,7 +804,7 @@ double c400drv::set_direct(const char *command_set, const char *command_ask, int
         res_str = send_to_equipment(command_ask);
         token = res_str.substr(0, res_str.find("\n")+1);
         res_str = res_str.substr(token.length(), res_str.length() - token.length());
-        std::cout << res_str << std::endl;
+        cout << res_str << endl;
         
         if (res_str=="INTernal")
             return 0;
@@ -783,10 +813,10 @@ double c400drv::set_direct(const char *command_set, const char *command_ask, int
 
         try{
 
-            return std::stof(res_str);
+            return stof(res_str);
         }
         catch (...){
-            std::cout << "Error converting from str to float" << std::endl;
+            cout << "Error converting from str to float" << endl;
             return 0;
         }
         
@@ -802,12 +832,12 @@ double c400drv::set_4_channels(const char *command_set, const char *command_ask,
         double val_ch2;
         double val_ch3;
         double val_ch4;
-        std::string str_val_ch1;
-        std::string str_val_ch2;
-        std::string str_val_ch3;
-        std::string str_val_ch4;
-        std::string cmd_msg_send;
-        std::string cmd_msg_read;
+        string str_val_ch1;
+        string str_val_ch2;
+        string str_val_ch3;
+        string str_val_ch4;
+        string cmd_msg_send;
+        string cmd_msg_read;
 
         // Check if the value to feed is a float or integer and handles it
 
@@ -816,39 +846,39 @@ double c400drv::set_4_channels(const char *command_set, const char *command_ask,
         getDoubleParam(param3, &val_ch3);
         getDoubleParam(param4, &val_ch4);
         
-        std::cout << "val1: " << val_ch1 << std::endl;
-        std::cout << "val2: " << val_ch2 << std::endl;
-        std::cout << "val3: " << val_ch3 << std::endl;
-        std::cout << "val4: " << val_ch4 << std::endl;
+        cout << "val1: " << val_ch1 << endl;
+        cout << "val2: " << val_ch2 << endl;
+        cout << "val3: " << val_ch3 << endl;
+        cout << "val4: " << val_ch4 << endl;
 
         switch (channel)
         {
             case 1:
-            str_val_ch1 = std::__cxx11::to_string(val);
-            str_val_ch2 = std::__cxx11::to_string(val_ch2);
-            str_val_ch3 = std::__cxx11::to_string(val_ch3);
-            str_val_ch4 = std::__cxx11::to_string(val_ch4);
+            str_val_ch1 = __cxx11::to_string(val);
+            str_val_ch2 = __cxx11::to_string(val_ch2);
+            str_val_ch3 = __cxx11::to_string(val_ch3);
+            str_val_ch4 = __cxx11::to_string(val_ch4);
             break;
 
             case 2:
-            str_val_ch1 = std::__cxx11::to_string(val_ch1);
-            str_val_ch2 = std::__cxx11::to_string(val);
-            str_val_ch3 = std::__cxx11::to_string(val_ch3);
-            str_val_ch4 = std::__cxx11::to_string(val_ch4);
+            str_val_ch1 = __cxx11::to_string(val_ch1);
+            str_val_ch2 = __cxx11::to_string(val);
+            str_val_ch3 = __cxx11::to_string(val_ch3);
+            str_val_ch4 = __cxx11::to_string(val_ch4);
             break;
             
             case 3:
-            str_val_ch1 = std::__cxx11::to_string(val_ch1);
-            str_val_ch2 = std::__cxx11::to_string(val_ch2);
-            str_val_ch3 = std::__cxx11::to_string(val);
-            str_val_ch4 = std::__cxx11::to_string(val_ch4);
+            str_val_ch1 = __cxx11::to_string(val_ch1);
+            str_val_ch2 = __cxx11::to_string(val_ch2);
+            str_val_ch3 = __cxx11::to_string(val);
+            str_val_ch4 = __cxx11::to_string(val_ch4);
             break;
 
             case 4:
-            str_val_ch1 = std::__cxx11::to_string(val_ch1);
-            str_val_ch2 = std::__cxx11::to_string(val_ch2);
-            str_val_ch3 = std::__cxx11::to_string(val_ch3);
-            str_val_ch4 = std::__cxx11::to_string(val);
+            str_val_ch1 = __cxx11::to_string(val_ch1);
+            str_val_ch2 = __cxx11::to_string(val_ch2);
+            str_val_ch3 = __cxx11::to_string(val_ch3);
+            str_val_ch4 = __cxx11::to_string(val);
             break;
         }
 
@@ -858,9 +888,9 @@ double c400drv::set_4_channels(const char *command_set, const char *command_ask,
         cmd_msg_read = command_ask;
 
 
-        res = get_parsed_response(send_to_equipment(cmd_msg_read.c_str()), channel);
+        res = get_parsed_response(cmd_msg_read.c_str(), channel);
 
-        std::cout << "my res is: " << res << std::endl;
+        cout << "my res is: " << res << endl;
         return res;
 }
 
@@ -873,51 +903,51 @@ double c400drv::set_4_channels_int(const char *command_set, const char *command_
         int val_ch2;
         int val_ch3;
         int val_ch4;
-        std::string str_val_ch1;
-        std::string str_val_ch2;
-        std::string str_val_ch3;
-        std::string str_val_ch4;
-        std::string cmd_msg_send;
-        std::string cmd_msg_read;
+        string str_val_ch1;
+        string str_val_ch2;
+        string str_val_ch3;
+        string str_val_ch4;
+        string cmd_msg_send;
+        string cmd_msg_read;
 
         getIntegerParam(param1, &val_ch1);
         getIntegerParam(param2, &val_ch2);
         getIntegerParam(param3, &val_ch3);
         getIntegerParam(param4, &val_ch4); 
         
-        std::cout << "val1: " << val_ch1 << std::endl;
-        std::cout << "val2: " << val_ch2 << std::endl;
-        std::cout << "val3: " << val_ch3 << std::endl;
-        std::cout << "val4: " << val_ch4 << std::endl;
+        cout << "val1: " << val_ch1 << endl;
+        cout << "val2: " << val_ch2 << endl;
+        cout << "val3: " << val_ch3 << endl;
+        cout << "val4: " << val_ch4 << endl;
 
         switch (channel)
         {
             case 1:
-            str_val_ch1 = std::__cxx11::to_string(val);
-            str_val_ch2 = std::__cxx11::to_string(val_ch2);
-            str_val_ch3 = std::__cxx11::to_string(val_ch3);
-            str_val_ch4 = std::__cxx11::to_string(val_ch4);
+            str_val_ch1 = __cxx11::to_string(val);
+            str_val_ch2 = __cxx11::to_string(val_ch2);
+            str_val_ch3 = __cxx11::to_string(val_ch3);
+            str_val_ch4 = __cxx11::to_string(val_ch4);
             break;
 
             case 2:
-            str_val_ch1 = std::__cxx11::to_string(val_ch1);
-            str_val_ch2 = std::__cxx11::to_string(val);
-            str_val_ch3 = std::__cxx11::to_string(val_ch3);
-            str_val_ch4 = std::__cxx11::to_string(val_ch4);
+            str_val_ch1 = __cxx11::to_string(val_ch1);
+            str_val_ch2 = __cxx11::to_string(val);
+            str_val_ch3 = __cxx11::to_string(val_ch3);
+            str_val_ch4 = __cxx11::to_string(val_ch4);
             break;
             
             case 3:
-            str_val_ch1 = std::__cxx11::to_string(val_ch1);
-            str_val_ch2 = std::__cxx11::to_string(val_ch2);
-            str_val_ch3 = std::__cxx11::to_string(val);
-            str_val_ch4 = std::__cxx11::to_string(val_ch4);
+            str_val_ch1 = __cxx11::to_string(val_ch1);
+            str_val_ch2 = __cxx11::to_string(val_ch2);
+            str_val_ch3 = __cxx11::to_string(val);
+            str_val_ch4 = __cxx11::to_string(val_ch4);
             break;
 
             case 4:
-            str_val_ch1 = std::__cxx11::to_string(val_ch1);
-            str_val_ch2 = std::__cxx11::to_string(val_ch2);
-            str_val_ch3 = std::__cxx11::to_string(val_ch3);
-            str_val_ch4 = std::__cxx11::to_string(val);
+            str_val_ch1 = __cxx11::to_string(val_ch1);
+            str_val_ch2 = __cxx11::to_string(val_ch2);
+            str_val_ch3 = __cxx11::to_string(val_ch3);
+            str_val_ch4 = __cxx11::to_string(val);
             break;
         }
 
@@ -944,8 +974,8 @@ double c400drv::set_4_channels_int(const char *command_set, const char *command_
                                         + str_val_ch3 + " " + str_val_ch4 + " ";
         send_to_equipment(cmd_msg_send.c_str());
         cmd_msg_read = command_ask;
-        res = get_parsed_response(send_to_equipment(cmd_msg_read.c_str()), channel);
-        std::cout << "my res is: " << res << std::endl;
+        res = get_parsed_response(cmd_msg_read.c_str(), channel);
+        cout << "my res is: " << res << endl;
         return res;
 }
 
@@ -956,10 +986,10 @@ double c400drv::set_2_vals(const char *command_set, const char *command_ask, int
         double res;
         double val_ch1;
         double val_ch2;
-        std::string str_val_ch1;
-        std::string str_val_ch2;
-        std::string cmd_msg_send;
-        std::string cmd_msg_read;
+        string str_val_ch1;
+        string str_val_ch2;
+        string cmd_msg_send;
+        string cmd_msg_read;
 
         // Check if the value to feed is a float or integer and handles it
         if (is_float){
@@ -979,13 +1009,13 @@ double c400drv::set_2_vals(const char *command_set, const char *command_ask, int
         switch (channel)
         {
             case 1:
-            str_val_ch1 = std::__cxx11::to_string(val);
-            str_val_ch2 = std::__cxx11::to_string(val_ch2);
+            str_val_ch1 = __cxx11::to_string(val);
+            str_val_ch2 = __cxx11::to_string(val_ch2);
             break;
 
             case 2:
-            str_val_ch1 = std::__cxx11::to_string(val_ch1);
-            str_val_ch2 = std::__cxx11::to_string(val);
+            str_val_ch1 = __cxx11::to_string(val_ch1);
+            str_val_ch2 = __cxx11::to_string(val);
             break;
         }
 
@@ -1006,21 +1036,21 @@ double c400drv::set_2_vals(const char *command_set, const char *command_ask, int
         cmd_msg_read = command_ask;
 
         if (is_float)
-            res = get_parsed_response(send_to_equipment(cmd_msg_read.c_str()), channel);
+            res = get_parsed_response(cmd_msg_read.c_str(), channel);
         else
-            res = get_parsed_response(send_to_equipment(cmd_msg_read.c_str()), channel);
-        std::cout << "my res is: " << res << std::endl;
+            res = get_parsed_response(cmd_msg_read.c_str(), channel);
+        cout << "my res is: " << res << endl;
         return res;
 }
 
 void c400drv::get_n_set_4_channels(const char *command_ask, int param1, int param2, int param3, int param4, 
                                    int n_param1, int n_param2, int n_param3, int n_param4)
 {
-    std::string token;
+    string token;
     double result_array[15];
-    std::string val;
-    std::string delimiter = ",";
-    // std::string cmd_msg_read;
+    string val;
+    string delimiter = ",";
+    // string cmd_msg_read;
     double ch1_val;
     double ch2_val;
     double ch3_val;
@@ -1036,10 +1066,10 @@ void c400drv::get_n_set_4_channels(const char *command_ask, int param1, int para
     ch3_val = result_array[3];
     ch4_val = result_array[4];
 
-    std::cout << "ch1: " << ch1_val << std::endl;
-    std::cout << "ch2: " << ch2_val << std::endl;
-    std::cout << "ch3: " << ch3_val << std::endl;
-    std::cout << "ch4: " << ch4_val << std::endl;
+    cout << "ch1: " << ch1_val << endl;
+    cout << "ch2: " << ch2_val << endl;
+    cout << "ch3: " << ch3_val << endl;
+    cout << "ch4: " << ch4_val << endl;
     
     setDoubleParam (param1,      ch1_val);
     setDoubleParam (param2,      ch2_val);
@@ -1047,19 +1077,19 @@ void c400drv::get_n_set_4_channels(const char *command_ask, int param1, int para
     setDoubleParam (param4,      ch4_val);
 }
 
-void c400drv::parse_counts(double *result_array, std::string val)
+void c400drv::parse_counts(double *result_array, string val)
 {
-    std::string delimiter = ",";
+    string delimiter = ",";
     size_t pos = 0;
-    std::string token;
-    std::string last_char;
+    string token;
+    string last_char;
 
     token = val.substr(0, val.find("\n")+1);
     val = val.substr(token.length(), val.length() - token.length());
 
     // result_array[0] = token;
     int array_idx = 0;
-    while ((pos = val.find(delimiter)) != std::string::npos) {
+    while ((pos = val.find(delimiter)) != string::npos) {
         token = val.substr(0, pos);
         last_char = token[token.length() - 1];
         if (last_char == "S" or last_char == "V"){
@@ -1067,11 +1097,11 @@ void c400drv::parse_counts(double *result_array, std::string val)
         }
         try
         {
-            result_array[array_idx] = std::stod(token);
+            result_array[array_idx] = stod(token);
         }
-        catch(const std::exception& e)
+        catch(const exception& e)
         {
-            std::cerr << e.what() << '\n';
+            cerr << e.what() << '\n';
         }
         
         
@@ -1081,36 +1111,37 @@ void c400drv::parse_counts(double *result_array, std::string val)
     }
         try
     {
-        result_array[array_idx] = std::stod(val); //Append the last val
+        result_array[array_idx] = stod(val); //Append the last val
     }
-    catch(const std::exception& e)
+    catch(const exception& e)
     {
-        std::cerr << e.what() << '\n';
+        cerr << e.what() << '\n';
     }
     
 
 }
 
-void c400drv::set_mbbo(const char *command_set, const std::string *mbbo_list, int mbbo_value)
+void c400drv::set_mbbo(const char *command_set, const string *mbbo_list, int mbbo_value)
 {
-    std::string cmd_msg_send;
-    std::cout << mbbo_list[mbbo_value] << std::endl;
+    string cmd_msg_send;
+    cout << mbbo_list[mbbo_value] << endl;
 
     cmd_msg_send = command_set + mbbo_list[mbbo_value];
     send_to_equipment(cmd_msg_send.c_str());
 }
 
 void c400drv::update_buffer(){
+    asynStatus status = asynSuccess;
     int end_loop_flag = 1;
     int p_data_array_pos = 0; // Position in the waveform array to be updated in the loop
     double temp_array[20]; // array to hold the data that is going to be placed in the PV array 
-    std::string data_not_collected_code = "-401,";
-    std::string base_msg = "FETch:COUNts? ";
-    std::string val; // Placeholder for the retrieved equipmente message
+    string data_not_collected_code = "-401,";
+    string base_msg = "FETch:COUNts? ";
+    string val; // Placeholder for the retrieved equipmente message
     int buffer_size;
-    std::string get_full_buffer_str;
+    string get_full_buffer_str;
     getIntegerParam (P_BUFFER,      &buffer_size);
-    get_full_buffer_str = base_msg + std::__cxx11::to_string(buffer_size);
+    get_full_buffer_str = base_msg + __cxx11::to_string(buffer_size);
     // Need to parse several lines, each one ending with "\r\n"
     // The equipment also return a blank line at the end, wich means that the last line is \r\n\r\n
     // So we can use this to tell that this is the last line and get all previous ones as well
@@ -1121,15 +1152,15 @@ void c400drv::update_buffer(){
     while (end_loop_flag){
 
         pasynOctetSyncIO->setInputEos(pasynUserEcho, "\n\r", strlen("\n\r"));
-        val = send_to_equipment(get_full_buffer_str.c_str());
+        status = send_to_equipment(get_full_buffer_str.c_str(), val);
         pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
 
-        std::istringstream iss(val);
-        for (std::string line; std::getline(iss, line); ){
+        istringstream iss(val);
+        for (string line; getline(iss, line); ){
             const char* first_5_char = line.substr(0, 5).c_str();
 
-            std::cout << "first 5 char: " << first_5_char << std::endl;
-            std::cout << line << std::endl;
+            cout << "first 5 char: " << first_5_char << endl;
+            cout << line << endl;
 
             if (strcmp(first_5_char, "FETch") == 0){
                 continue;
@@ -1151,12 +1182,12 @@ void c400drv::update_buffer(){
                 pData_time[p_data_array_pos] = temp_array[5];
 
                 // pData_[p_data_array_pos] = p_data_array_pos;
-                //std::cout << "Pdata pos " << p_data_array_pos << " Array data "  << pData_[p_data_array_pos] << std::endl;
+                //cout << "Pdata pos " << p_data_array_pos << " Array data "  << pData_[p_data_array_pos] << endl;
                 p_data_array_pos ++;
             }
         }
     }
-    std::cout << "callback to array" << std::endl;
+    cout << "callback to array" << endl;
     doCallbacksFloat64Array(pData_ch1, buffer_size,  P_READ_BUFFER1, 0);
     doCallbacksFloat64Array(pData_ch2, buffer_size,  P_READ_BUFFER2, 0);
     doCallbacksFloat64Array(pData_ch3, buffer_size,  P_READ_BUFFER3, 0);
