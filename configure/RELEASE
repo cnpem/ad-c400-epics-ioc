@@ -32,10 +32,6 @@
 EPICS_BASE=/usr/local/epics-nfs/base/R3.15.6
 ASYN=/usr/local/epics-nfs/modules/R3.15.6/synApps/R6.1/support/asyn-R4-36
 
-PCRE_INCLUDE=/usr/include/pcre
-PCRE_LIB=/usr/lib
-
-
 # EPICS_BASE should appear last so earlier modules can override stuff:
 
 # Set RULES here if you want to use build rules from somewhere

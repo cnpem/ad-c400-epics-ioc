@@ -592,7 +592,6 @@ record(ai, "$(P)$(R)BUFFER_SIZE_RBV")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))BUFFER")
    field(PREC, "5")
    field(SCAN, "I/O Intr")
-   #field(EGU,"s")
 }
 
 record(ao, "$(P)$(R)BUFFER_SIZE")
@@ -601,7 +600,6 @@ record(ao, "$(P)$(R)BUFFER_SIZE")
    field(DTYP, "asynInt32")
    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))BUFFER")
    field(PREC, "5")
-   #field(EGU,"s")
 }
 
 record(ai, "$(P)$(R)BURST_SIZE_RBV")
@@ -612,7 +610,6 @@ record(ai, "$(P)$(R)BURST_SIZE_RBV")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))BURST")
    field(PREC, "5")
    field(SCAN, "I/O Intr")
-   #field(EGU,"s")
 }
 
 record(ao, "$(P)$(R)BURST_SIZE")
@@ -621,7 +618,6 @@ record(ao, "$(P)$(R)BURST_SIZE")
    field(DTYP, "asynFloat64")
    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))BURST")
    field(PREC, "5")
-   #field(EGU,"s")
 }
 
 record(ai, "$(P)$(R)COUNT_ch1")
@@ -631,7 +627,6 @@ record(ai, "$(P)$(R)COUNT_ch1")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))COUNT1")
    field(PREC, "5")
    field(SCAN, "I/O Intr")
-   #field(EGU,"s")
 }
 
 record(ai, "$(P)$(R)COUNT_ch2")
@@ -641,7 +636,6 @@ record(ai, "$(P)$(R)COUNT_ch2")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))COUNT2")
    field(PREC, "5")
    field(SCAN, "I/O Intr")
-   #field(EGU,"s")
 }
 
 record(ai, "$(P)$(R)COUNT_ch3")
@@ -651,7 +645,6 @@ record(ai, "$(P)$(R)COUNT_ch3")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))COUNT3")
    field(PREC, "5")
    field(SCAN, "I/O Intr")
-   #field(EGU,"s")
 }
 
 record(ai, "$(P)$(R)COUNT_ch4")
@@ -661,7 +654,15 @@ record(ai, "$(P)$(R)COUNT_ch4")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))COUNT4")
    field(PREC, "5")
    field(SCAN, "I/O Intr")
-   #field(EGU,"s")
+}
+
+record(ai, "$(P)$(R)COUNT_TriggerCounts")
+{
+   field(DESC,"Get trigger count")
+   field(DTYP, "asynFloat64")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))TRIGCOUNTS")
+   field(PREC, "5")
+   field(SCAN, "I/O Intr")
 }
 
 record(ai, "$(P)$(R)READ_ENCODER")
@@ -679,6 +680,27 @@ record(mbbo, "$(P)$(R)TRIGGER_MODE")
 {
    field(DTYP, "asynInt32")
    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))TRIGGER_MODE")
+   field(ZRST, "CUSTom")
+   field(ZRVL, "0")
+   field(ONST, "INTernal")
+   field(ONVL, "1")
+   field(TWST, "EXTERNAL_START")
+   field(TWVL, "2")
+   field(THST, "EXTERNAL_START_STOP")
+   field(THVL, "3")
+   field(FRST, "EXTERNAL_START_HOLD")
+   field(FRVL, "4")
+   field(FVST, "EXTERNAL_WINDOWED")
+   field(FVVL, "5")
+   field(SXST, "DISCRIMINATOR_SWEEP")
+   field(SXVL, "6")
+}
+
+record(mbbi, "$(P)$(R)TRIGGER_MODE_RBV")
+{
+   field(DTYP, "asynInt32")
+   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))TRIGGER_MODE")
+   field(SCAN, "I/O Intr")
    field(ZRST, "CUSTom")
    field(ZRVL, "0")
    field(ONST, "INTernal")
@@ -780,79 +802,74 @@ record(bo, "$(P)$(R)TRIGGER_PAUSE")
     field(ONAM, "BNC")
 }
 
-record(waveform, "$(P)$(R)READ_BUFFER_ch1") 
+record(waveform, "$(P)$(R)BUFFER_ch1") 
 {
-    field(DESC, "description")
+    field(DESC, "Get Buffer ch1 counts")
     field(DTYP, "asynFloat64ArrayIn")
     field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER1")
     field(FTVL, "DOUBLE")
     field(NELM, "65536")
     field(SCAN, "I/O Intr")
-   #  field(SCAN, "1 second")
 }
 
-record(waveform, "$(P)$(R)READ_BUFFER_ch2") 
+record(waveform, "$(P)$(R)BUFFER_ch2") 
 {
-    field(DESC, "description")
+    field(DESC, "Get Buffer ch2 counts")
     field(DTYP, "asynFloat64ArrayIn")
     field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER2")
     field(FTVL, "DOUBLE")
     field(NELM, "65536")
     field(SCAN, "I/O Intr")
-   #  field(SCAN, "1 second")
 }
 
-record(waveform, "$(P)$(R)READ_BUFFER_ch3") 
+record(waveform, "$(P)$(R)BUFFER_ch3") 
 {
-    field(DESC, "description")
+    field(DESC, "Get Buffer ch3 counts")
     field(DTYP, "asynFloat64ArrayIn")
     field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER3")
     field(FTVL, "DOUBLE")
     field(NELM, "65536")
     field(SCAN, "I/O Intr")
-   #  field(SCAN, "1 second")
 }
 
-record(waveform, "$(P)$(R)READ_BUFFER_ch4") 
+record(waveform, "$(P)$(R)BUFFER_ch4") 
 {
-    field(DESC, "description")
+    field(DESC, "Get Buffer ch4 counts")
     field(DTYP, "asynFloat64ArrayIn")
     field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER4")
     field(FTVL, "DOUBLE")
     field(NELM, "65536")
     field(SCAN, "I/O Intr")
-   #  field(SCAN, "1 second")
 }
 
-record(waveform, "$(P)$(R)READ_BUFFER_TIME") 
+record(waveform, "$(P)$(R)BUFFER_TriggerCounts") 
 {
-    field(DESC, "description")
+    field(DESC, "Get Buffer trigger counts")
     field(DTYP, "asynFloat64ArrayIn")
-    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER_TIME")
+    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER_TRIGCOUNTS")
     field(FTVL, "DOUBLE")
     field(NELM, "65536")
     field(SCAN, "I/O Intr")
-   #  field(SCAN, "1 second")
 }
 
-record(mbbo, "$(P)$(R)READ_STATUS")
-{
-   field(DTYP, "asynInt32")
-   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_DIGITAL")
-   field(ZRST, "Connected")
-   field(ZRVL, "0")
-   field(ONST, "Pending/Busy")
-   field(ONVL, "1")
-   field(TWST, "Error")
-   field(TWVL, "2")
-   field(THST, "Output changed")
-   field(THVL, "4")
-   field(FRST, "Urgent device error")
-   field(FRVL, "6")
-   field(FVST, "Updating firmware")
-   field(FVVL, "8")
-   field(SXST, "Starting up")
-   field(SXVL, "9")
-   field(SVST, "Measuring")
-   field(SVVL, "16")
-}
+#record(mbbo, "$(P)$(R)READ_STATUS")
+#{
+#   field(DTYP, "asynInt32")
+#   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_DIGITAL")
+#   field(ZRST, "Connected")
+#   field(ZRVL, "0")
+#   field(ONST, "Pending/Busy")
+#   field(ONVL, "1")
+#   field(TWST, "Error")
+#   field(TWVL, "2")
+#   field(THST, "Output changed")
+#   field(THVL, "4")
+#   field(FRST, "Urgent device error")
+#   field(FRVL, "6")
+#   field(FVST, "Updating firmware")
+#   field(FVVL, "8")
+#   field(SXST, "Starting up")
+#   field(SXVL, "9")
+#   field(SVST, "Measuring")
+#   field(SVVL, "16")
+#}

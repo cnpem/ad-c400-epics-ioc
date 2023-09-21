@@ -1,5 +1,5 @@
 #include "asynPortDriver.h"
-#include <array>
+#include <vector>
 
 /* These are the drvInfo strings that are used to identify the parameters.
  * They are used by asyn clients, including standard asyn device support */
@@ -39,6 +39,7 @@
 #define P_COUNT2String                  "COUNT2"              /* asynFloat64,  r/o */
 #define P_COUNT3String                  "COUNT3"              /* asynFloat64,  r/o */
 #define P_COUNT4String                  "COUNT4"              /* asynFloat64,  r/o */
+#define P_TRIGCOUNTSString              "TRIGCOUNTS"          /* asynFloat64,  r/o */
 #define P_ENCODERString                 "ENCODER"             /* asynFloat64,  r/o */
 #define P_TRIGGER_MODEString            "TRIGGER_MODE"        /* asynInt32,    r/w */
 #define P_TRIGGER_POLARITYString        "TRIGGER_POLARITY"    /* asynInt32,    r/w */
@@ -50,9 +51,9 @@
 #define P_READ_BUFFER2String            "READ_BUFFER2"         /* asynFloat64Array,  r/o */
 #define P_READ_BUFFER3String            "READ_BUFFER3"         /* asynFloat64Array,  r/o */
 #define P_READ_BUFFER4String            "READ_BUFFER4"         /* asynFloat64Array,  r/o */
-#define P_READ_BUFFER_TIMEString        "READ_BUFFER_TIME"     /* asynFloat64Array,  r/o */
+#define P_READ_BUFFER_TRIGCOUNTSString        "READ_BUFFER_TRIGCOUNTS"     /* asynFloat64Array,  r/o */
 
-#define TIMEOUT 2.0 // Scintillator response timeout
+//C400 specific commands (ASCII)
 #define C400_MSG_DAC_ASK "CONFigure:DAC?"
 #define C400_MSG_DAC_SET "CONFigure:DAC "
 #define C400_MSG_DEAD_ASK "CONFigure:DEADtime?"
@@ -94,10 +95,12 @@
 #define C400_MSG_SYSTEM_IPMODE_SET "SYSTem:COMMunication:IPMODE "
 
 #define buffer_array_size 65536
+#define TIMEOUT 3.0 //Scintillator response timeout
 
-static string trigger_mode_mbbo[]={"CUSTom", "INTernal", "EXTERNAL_START", "EXTERNAL_START_STOP",
-                                        "EXTERNAL_START_HOLD", "EXTERNAL_WINDOWED", "DISCRIMINATOR_SWEEP"};
-static string system_ipmode_mbbo[]={"DHCP", "Static"};
+vector<string> trigger_mode= {"CUSTom", "INTernal", "EXTERNAL_START", "EXTERNAL_START_STOP", "EXTERNAL_START_HOLD", "EXTERNAL_WINDOWED", "DISCRIMINATOR_SWEEP"};
+vector<string> trigger_source={"INTernal", "BNC"};
+vector<string> system_ipmode={"DHCP", "Static"};
+vector<string> polarity={"N", "P"};
 
 /** Class that demonstrates the use of the asynPortDriver base class to greatly simplify the task
   * of writing an asyn port driver.
@@ -114,11 +117,22 @@ public:
     virtual asynStatus writeInt32(asynUser *pasynUser, epicsInt32 value);
     virtual asynStatus readFloat64(asynUser *pasynUser, epicsFloat64 *value);
     virtual asynStatus readInt32(asynUser *pasynUser, epicsInt32 *value);
-    virtual asynStatus readFloat64Array(asynUser *pasynUser, epicsFloat64 *value,
-                                        size_t nElements, size_t *nIn);
+    virtual asynStatus readFloat64Array(asynUser *pasynUser, epicsFloat64 *value, size_t nElements, size_t *nIn);
 
     /* These are the methods that are new to this class */
     void update_counts();
+
+    asynStatus send_to_equipment(const char *writeBuffer, string &response);
+    asynStatus send_to_equipment(const char *writeBuffer);
+    asynStatus get_to_equipment(const char *command_ask, int n_element, double &response);
+    asynStatus set_to_equipment(const char *command_set, const char *command_ask, int channel, double value, double &response);
+    asynStatus set_4_channels_to_equipment(const char *command_set, const char *command_ask, int param1, int param2, int param3, int param4, int is_float, int channel, double &response);
+    asynStatus set_2_vals_to_equipment(const char *command_set, const char *command_ask, int param1, int param2, int is_float, int channel, double &response);
+    
+    asynStatus get_counts(); //get counts unbuffer (buffer = 0)
+    asynStatus get_buffer(); //get counts buffer (buffer > 0)
+    
+    void parse_counts(double *result_array, string received_line);
     
 protected:
     /** Values used for pasynUser->reason, and indexes into the parameter library. */
@@ -157,6 +171,7 @@ protected:
     int P_COUNT2;
     int P_COUNT3;
     int P_COUNT4;
+    int P_TRIGCOUNTS;
     int P_ENCODER;
     int P_TRIGGER_MODE;
     int P_TRIGGER_POLARITY;
@@ -168,7 +183,7 @@ protected:
     int P_READ_BUFFER2;
     int P_READ_BUFFER3;
     int P_READ_BUFFER4;
-    int P_READ_BUFFER_TIME;
+    int P_READ_BUFFER_TRIGCOUNTS;
 
 private:
     asynUser *pasynUserEcho;
@@ -176,26 +191,8 @@ private:
     epicsFloat64 *pData_ch2;
     epicsFloat64 *pData_ch3;
     epicsFloat64 *pData_ch4;
-    epicsFloat64 *pData_time;
+    epicsFloat64 *pData_trigcounts;
 
-    asynStatus send_to_equipment(const char *writeBuffer, string &response);
-    asynStatus send_to_equipment(const char *writeBuffer);
-
-    asynStatus get_to_equipment(const char *writeBuffer, int n_element, double &response);
-    asynStatus set_to_equipment(const char *command_set, const char *command_ask, int channel, double value, double &response);
-    
-    double set_4_channels(const char *command_set, const char *command_ask, int param1, 
-                            int param2, int param3, int param4, int channel, double val);
-
-    double set_4_channels_int(const char *command_set, const char *command_ask, int param1, 
-                            int param2, int param3, int param4, int channel, double val, int to_string=0);
-
-    double set_2_vals(const char *command_set, const char *command_ask, int param1, 
-                            int param2, int channel, double val, int is_float=1, int to_string=0);
-
-    void get_n_set_4_channels(const char *command_ask, int param1, int param2, int param3, int param4, 
-                                   int n_param1, int n_param2, int n_param3, int n_param4);
-    void set_mbbo(const char *command_set, const string *mbbo_list, int mbbo_value);
-    void update_buffer();
-    void parse_counts(double *result_array, string received_line);
+    int old_triggercounts = 0;
+    int accumulate_triggercounts = 0;
 };

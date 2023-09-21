@@ -6,6 +6,8 @@
 #include <iostream>
 #include <unistd.h>
 #include <sstream>
+#include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -78,6 +80,7 @@ c400drv::c400drv(const char *portName, char *ip)
     createParam(P_COUNT2String, asynParamFloat64, &P_COUNT2);
     createParam(P_COUNT3String, asynParamFloat64, &P_COUNT3);
     createParam(P_COUNT4String, asynParamFloat64, &P_COUNT4);
+    createParam(P_TRIGCOUNTSString, asynParamFloat64, &P_TRIGCOUNTS);
     createParam(P_ENCODERString, asynParamFloat64, &P_ENCODER);
     createParam(P_TRIGGER_MODEString, asynParamInt32, &P_TRIGGER_MODE);
     createParam(P_TRIGGER_POLARITYString, asynParamInt32, &P_TRIGGER_POLARITY);
@@ -89,24 +92,19 @@ c400drv::c400drv(const char *portName, char *ip)
     createParam(P_READ_BUFFER2String, asynParamFloat64Array,  &P_READ_BUFFER2);
     createParam(P_READ_BUFFER3String, asynParamFloat64Array,  &P_READ_BUFFER3);
     createParam(P_READ_BUFFER4String, asynParamFloat64Array,  &P_READ_BUFFER4);
-    createParam(P_READ_BUFFER_TIMEString, asynParamFloat64Array,  &P_READ_BUFFER_TIME);
+    createParam(P_READ_BUFFER_TRIGCOUNTSString, asynParamFloat64Array,  &P_READ_BUFFER_TRIGCOUNTS);
 
     pasynOctetSyncIO->connect(ip, 0, &pasynUserEcho, NULL);
     pasynOctetSyncIO->setInputEos(pasynUserEcho,  "\r\n", strlen("\r\n"));
     pasynOctetSyncIO->setOutputEos(pasynUserEcho, "\n",   strlen("\n"));
 
     //Set default TRIGGER MODE as internal
-    //set_mbbo(C400_MSG_TRIGGER_MODE_SET, trigger_mode_mbbo, 1); 
-    //setIntegerParam (P_TRIGGER_MODE,      1);
+    //double result;
+    //status = set_to_equipment(C400_MSG_TRIGGER_MODE_SET, C400_MSG_TRIGGER_MODE_ASK, 0, 1, result);
+    //setIntegerParam (P_TRIGGER_MODE,      result);
 
     //Abort any counting while IOC is booting
     send_to_equipment(C400_MSG_ABORT_SET);
-
-    //Set counter to 0 as default
-    setDoubleParam (P_COUNT1, 0);
-    setDoubleParam (P_COUNT2, 0);
-    setDoubleParam (P_COUNT3, 0);
-    setDoubleParam (P_COUNT4, 0);
 
     status = (asynStatus) callParamCallbacks();
     status = (asynStatus)(epicsThreadCreate("c400countTask",
@@ -135,39 +133,20 @@ void update_counts(void *drvPvt)
 void c400drv::update_counts(){
     asynStatus status = asynSuccess;
     int is_counting;
-    double acquire_period;
     int buffer_size;
-    double res;
+    double result;
 
     while (true){
         getIntegerParam(P_ACQUIRE, &is_counting);
         getIntegerParam(P_BUFFER, &buffer_size);
-        getDoubleParam(P_PERIOD, &acquire_period);
 
         if (is_counting and buffer_size == 0){
-            get_n_set_4_channels(C400_MSG_COUNTS_ASK, P_COUNT1, P_COUNT2, 
-                                P_COUNT3, P_COUNT4, 2,3,4,5);
-            status = get_to_equipment(C400_MSG_ENCODER_ASK, 1, res);
-            setDoubleParam (P_ENCODER, res);
+            status = get_counts();
+            status = get_to_equipment(C400_MSG_ENCODER_ASK, 1, result);
+            setDoubleParam (P_ENCODER, result);
         }
         else if (is_counting and buffer_size < buffer_array_size and buffer_size != 0){
-            // lock();
-            pData_ch1 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
-            pData_ch2 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
-            pData_ch3 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
-            pData_ch4 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
-            pData_time = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
-            for (int i = 0; i < buffer_size; ++i) {  // Reset the array
-                pData_ch1[i] = 0;
-                pData_ch2[i] = 0;
-                pData_ch3[i] = 0;
-                pData_ch4[i] = 0;
-                pData_time[i] = 0;
-            }
-            update_buffer();
-            // unlock();
-            setIntegerParam (P_ACQUIRE, 0);
-            
+            status = get_buffer();
         }
         callParamCallbacks();
     }
@@ -181,8 +160,8 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
     const char *paramName;
     const char* functionName = "writeInt32";
     double result;
+    int res;
     int is_counting;
-    int was_counting = 0;
     int buffer_size;
     /* Set the parameter in the parameter library. */
     status = (asynStatus) setIntegerParam(function, value);
@@ -190,54 +169,54 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
     /* Fetch the parameter string name for possible use in debugging */
     getParamName(function, &paramName);
 
-    getIntegerParam(P_BUFFER, &buffer_size);
-    getIntegerParam(P_ACQUIRE, &is_counting);
-    if (is_counting and function != P_ACQUIRE and buffer_size == 0){
+    if (function == P_ACQUIRE and value == 0){
         send_to_equipment(C400_MSG_ABORT_SET);
         setIntegerParam (P_ACQUIRE,      0);
-        was_counting = 1;
-        status = (asynStatus) callParamCallbacks();
     }
-
-
-    if (function == P_HIVO_ENABLE1) {
-        result = set_4_channels_int(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
-                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 1, value);
+    else if (function == P_ACQUIRE and value == 1){
+        old_triggercounts = 0;
+        accumulate_triggercounts = 0;
+        send_to_equipment(C400_MSG_ACQUIRE_SET);
+        setIntegerParam (P_ACQUIRE,      1);
+    }
+    else if (function == P_HIVO_ENABLE1) {
+        status = set_4_channels_to_equipment(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
+                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 0, 1, result);
         setIntegerParam (P_HIVO_ENABLE1,      result);
     }
     else if (function == P_HIVO_ENABLE2){
-        result = set_4_channels_int(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
-                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 2, value);
+        status = set_4_channels_to_equipment(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
+                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 0, 2, result);
         setIntegerParam (P_HIVO_ENABLE2,      result);
     }
     else if (function == P_HIVO_ENABLE3){
-        result = set_4_channels_int(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
-                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 3, value);
+        status = set_4_channels_to_equipment(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
+                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 0, 3, result);
         setIntegerParam (P_HIVO_ENABLE3,      result);
     }
     else if (function == P_HIVO_ENABLE4){
-        result = set_4_channels_int(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
-                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 4, value);
+        status = set_4_channels_to_equipment(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
+                                P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 0, 4, result);
         setIntegerParam (P_HIVO_ENABLE4,      result);
     }
     else if (function == P_POLARITY1) {
-        result = set_4_channels_int(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
-                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 1, value, 1);
+        status = set_4_channels_to_equipment(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
+                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 0, 1, result);
         setIntegerParam (P_POLARITY1,      result);
     }
     else if (function == P_POLARITY2){
-        result = set_4_channels_int(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
-                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 2, value, 1);
+        status = set_4_channels_to_equipment(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
+                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 0, 2, result);
         setIntegerParam (P_POLARITY2,      result);
     }
     else if (function == P_POLARITY3){
-        result = set_4_channels_int(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
-                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 3, value, 1);
+        status = set_4_channels_to_equipment(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
+                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 0, 3, result);
         setIntegerParam (P_POLARITY3,      result);
     }
     else if (function == P_POLARITY4){
-        result = set_4_channels_int(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
-                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 4, value, 1);
+        status = set_4_channels_to_equipment(C400_MSG_POLARITY_SET, C400_MSG_POLARITY_ASK, 
+                                P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 0, 4, result);
         setIntegerParam (P_POLARITY4,      result);
     }
     else if (function == P_ACQUIRE){
@@ -250,12 +229,12 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
         
     }
     else if (function == P_TRIGGER_MODE){
-        set_mbbo(C400_MSG_TRIGGER_MODE_SET, trigger_mode_mbbo, value);
-        setIntegerParam (P_TRIGGER_MODE,      value);
+        status = set_to_equipment(C400_MSG_TRIGGER_MODE_SET, C400_MSG_TRIGGER_MODE_ASK, 0, value, result);
+        setIntegerParam (P_TRIGGER_MODE,      result);
     }
     else if (function == P_SYSTEM_IPMODE){
-        set_mbbo(C400_MSG_SYSTEM_IPMODE_SET, system_ipmode_mbbo, value);
-        setIntegerParam (P_SYSTEM_IPMODE,      value);
+        status = set_to_equipment(C400_MSG_SYSTEM_IPMODE_SET, C400_MSG_SYSTEM_IPMODE_ASK, 0, value, result);
+        setIntegerParam (P_SYSTEM_IPMODE,      result);
     }
     else if (function == P_TRIGGER_POLARITY){
         status = set_to_equipment(C400_MSG_TRIGGER_POLARITY_SET, C400_MSG_TRIGGER_POLARITY_ASK, 0, value, result);
@@ -275,15 +254,10 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
     }
     else if (function == P_BUFFER){
         status = set_to_equipment(C400_MSG_BUFFER_SET, C400_MSG_BUFFER_ASK, 0, value, result);
-        setIntegerParam (P_BUFFER,      value);
+        setIntegerParam (P_BUFFER,      result);
     }
 
     /* Do callbacks so higher layers see any changes */
-
-    if (was_counting){
-        send_to_equipment(C400_MSG_ACQUIRE_SET);
-        setIntegerParam (P_ACQUIRE,      1);
-    }
 
     status = (asynStatus) callParamCallbacks();
 
@@ -304,20 +278,10 @@ asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
     int function = pasynUser->reason;
     asynStatus status = asynSuccess;
     epicsInt32 run;
-    cout << "Write" << endl;
     const char *paramName;
     const char* functionName = "writeFloat64";
     double result;
-    int is_counting;
-    int was_counting = 0;
 
-    getIntegerParam(P_ACQUIRE, &is_counting);
-    if (is_counting and function != P_ACQUIRE){
-        send_to_equipment(C400_MSG_ABORT_SET);
-        setIntegerParam (P_ACQUIRE,      0);
-        was_counting = 1;
-        status = (asynStatus) callParamCallbacks();
-    }
     if (function == P_DAC1) {
         status = set_to_equipment(C400_MSG_DAC_SET, C400_MSG_DAC_ASK, 1, value, result);
         setDoubleParam (P_DAC1,      result);
@@ -338,90 +302,85 @@ asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
         status = set_to_equipment(C400_MSG_DEAD_SET, C400_MSG_DEAD_ASK, 0, value, result);
         setDoubleParam (P_DEAD,      value);
     }
-    else if (function == P_DHI1) {
-        result = set_4_channels(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
-                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 1, value);
-        setDoubleParam (P_DHI1,      result);
-    }
-    else if (function == P_DHI2){
-        result = set_4_channels(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
-                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 2, value);
-        setDoubleParam (P_DHI2,      result);
-    }
-    else if (function == P_DHI3){
-        result = set_4_channels(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
-                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 3, value);
-        setDoubleParam (P_DHI3,      result);
-    }
-    else if (function == P_DHI4){
-        result = set_4_channels(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
-                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 4, value);
-        setDoubleParam (P_DHI4,      result);
-    }
-    else if (function == P_DLO1) {
-        result = set_4_channels(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
-                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 1, value);
-        setDoubleParam (P_DLO1,      result);
-    }
-    else if (function == P_DLO2){
-        result = set_4_channels(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
-                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 2, value);
-        setDoubleParam (P_DLO2,      result);
-    }
-    else if (function == P_DLO3){
-        result = set_4_channels(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
-                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 3, value);
-        setDoubleParam (P_DLO3,      result);
-    }
-    else if (function == P_DLO4){
-        result = set_4_channels(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
-                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 4, value);
-        setDoubleParam (P_DLO4,      result);
-    }
-    else if (function == P_HIVO_VOLTS1) {
-        result = set_4_channels(C400_MSG_HIVO_VOLTS_SET, C400_MSG_HIVO_VOLTS_ASK, 
-                                P_HIVO_VOLTS1, P_HIVO_VOLTS2, P_HIVO_VOLTS3, P_HIVO_VOLTS4, 1, value);
-        setDoubleParam (P_HIVO_VOLTS1,      result);
-    }
-    else if (function == P_HIVO_VOLTS2){
-        result = set_4_channels(C400_MSG_HIVO_VOLTS_SET, C400_MSG_HIVO_VOLTS_ASK, 
-                                P_HIVO_VOLTS1, P_HIVO_VOLTS2, P_HIVO_VOLTS3, P_HIVO_VOLTS4, 2, value);
-        setDoubleParam (P_HIVO_VOLTS2,      result);
-    }
-    else if (function == P_HIVO_VOLTS3){
-        result = set_4_channels(C400_MSG_HIVO_VOLTS_SET, C400_MSG_HIVO_VOLTS_ASK, 
-                                P_HIVO_VOLTS1, P_HIVO_VOLTS2, P_HIVO_VOLTS3, P_HIVO_VOLTS4, 3, value);
-        setDoubleParam (P_HIVO_VOLTS3,      result);
-    }
-    else if (function == P_HIVO_VOLTS4){
-        result = set_4_channels(C400_MSG_HIVO_VOLTS_SET, C400_MSG_HIVO_VOLTS_ASK, 
-                                P_HIVO_VOLTS1, P_HIVO_VOLTS2, P_HIVO_VOLTS3, P_HIVO_VOLTS4, 4, value);
-        setDoubleParam (P_HIVO_VOLTS4,      result);
+    else if (function == P_BURST){
+        status = set_to_equipment(C400_MSG_BURST_SET, C400_MSG_BURST_ASK, 0, value, result);
+        setDoubleParam (P_BURST,      result);
     }
     else if (function == P_PERIOD){
         status = set_to_equipment(C400_MSG_PERIOD_SET, C400_MSG_PERIOD_ASK, 0, value, result);
         setDoubleParam (P_PERIOD,      result);
     }
+    else if (function == P_DHI1) {
+        status = set_4_channels_to_equipment(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
+                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 1, 1, result);
+        setDoubleParam (P_DHI1,      result);
+    }
+    else if (function == P_DHI2){
+        status = set_4_channels_to_equipment(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
+                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 1, 2, result);
+        setDoubleParam (P_DHI2,      result);
+    }
+    else if (function == P_DHI3){
+        status = set_4_channels_to_equipment(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
+                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 1, 3, result);
+        setDoubleParam (P_DHI3,      result);
+    }
+    else if (function == P_DHI4){
+        status = set_4_channels_to_equipment(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
+                                P_DHI1, P_DHI2, P_DHI3, P_DHI4, 1, 4, result);
+        setDoubleParam (P_DHI4,      result);
+    }
+    else if (function == P_DLO1) {
+        status = set_4_channels_to_equipment(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
+                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 1, 1, result);
+        setDoubleParam (P_DLO1,      result);
+    }
+    else if (function == P_DLO2){
+        status = set_4_channels_to_equipment(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
+                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 1, 2, result);
+        setDoubleParam (P_DLO2,      result);
+    }
+    else if (function == P_DLO3){
+        status = set_4_channels_to_equipment(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
+                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 1, 3, result);
+        setDoubleParam (P_DLO3,      result);
+    }
+    else if (function == P_DLO4){
+        status = set_4_channels_to_equipment(C400_MSG_DLO_SET, C400_MSG_DLO_ASK, 
+                                P_DLO1, P_DLO2, P_DLO3, P_DLO4, 1, 4, result);
+        setDoubleParam (P_DLO4,      result);
+    }
+    else if (function == P_HIVO_VOLTS1) {
+        status = set_4_channels_to_equipment(C400_MSG_HIVO_VOLTS_SET, C400_MSG_HIVO_VOLTS_ASK, 
+                                P_HIVO_VOLTS1, P_HIVO_VOLTS2, P_HIVO_VOLTS3, P_HIVO_VOLTS4, 1, 1, result);
+        setDoubleParam (P_HIVO_VOLTS1,      result);
+    }
+    else if (function == P_HIVO_VOLTS2){
+        status = set_4_channels_to_equipment(C400_MSG_HIVO_VOLTS_SET, C400_MSG_HIVO_VOLTS_ASK, 
+                                P_HIVO_VOLTS1, P_HIVO_VOLTS2, P_HIVO_VOLTS3, P_HIVO_VOLTS4, 1, 2, result);
+        setDoubleParam (P_HIVO_VOLTS2,      result);
+    }
+    else if (function == P_HIVO_VOLTS3){
+        status = set_4_channels_to_equipment(C400_MSG_HIVO_VOLTS_SET, C400_MSG_HIVO_VOLTS_ASK, 
+                                P_HIVO_VOLTS1, P_HIVO_VOLTS2, P_HIVO_VOLTS3, P_HIVO_VOLTS4, 1, 3, result);
+        setDoubleParam (P_HIVO_VOLTS3,      result);
+    }
+    else if (function == P_HIVO_VOLTS4){
+        status = set_4_channels_to_equipment(C400_MSG_HIVO_VOLTS_SET, C400_MSG_HIVO_VOLTS_ASK, 
+                                P_HIVO_VOLTS1, P_HIVO_VOLTS2, P_HIVO_VOLTS3, P_HIVO_VOLTS4, 1, 4, result);
+        setDoubleParam (P_HIVO_VOLTS4,      result);
+    }
+
     else if (function == P_PULSER_Period) {
-        result = set_2_vals(C400_MSG_PULSER_SET, C400_MSG_PULSER_ASK, 
-                                P_PULSER_Period, P_PULSER_Width, 1, value);
+        status = set_2_vals_to_equipment(C400_MSG_PULSER_SET, C400_MSG_PULSER_ASK, 
+                                P_PULSER_Period, P_PULSER_Width, 1, 1, result);
         setDoubleParam (P_PULSER_Period,      result);
     }
     else if (function == P_PULSER_Width) {
-        result = set_2_vals(C400_MSG_PULSER_SET, C400_MSG_PULSER_ASK, 
-                                P_PULSER_Period, P_PULSER_Width, 2, value);
+        status = set_2_vals_to_equipment(C400_MSG_PULSER_SET, C400_MSG_PULSER_ASK, 
+                                P_PULSER_Period, P_PULSER_Width, 1, 2, result);
         setDoubleParam (P_PULSER_Width,      result);
     }
-    else if (function == P_BURST){
-        status = set_to_equipment(C400_MSG_BURST_SET, C400_MSG_BURST_ASK, 0, value, result);
-        setDoubleParam (P_BURST,      result);
-    }
-
-    if (was_counting){
-        send_to_equipment(C400_MSG_ACQUIRE_SET);
-        setIntegerParam (P_ACQUIRE,      1);
-    }
-
 
     status = (asynStatus) callParamCallbacks();
 
@@ -608,8 +567,6 @@ asynStatus c400drv::readFloat64Array(asynUser *pasynUser, epicsFloat64 *value,
     epicsTimeStamp timeStamp;
     const char *functionName = "readFloat64Array";
 
-    // cout << "im inside readFloatArray" << endl;
-
     if (function == P_READ_BUFFER1) {
         memcpy(value, pData_ch1, sizeof(epicsFloat64));
         
@@ -643,6 +600,7 @@ asynStatus c400drv::readFloat64Array(asynUser *pasynUser, epicsFloat64 *value,
 asynStatus c400drv::send_to_equipment(const char *writeBuffer, string &response)
 {
     asynStatus status = asynSuccess;
+    const char *functionName = "send_to_equipment";
     size_t nRead, nActual;
     string null_str = "";
     int eomReason;
@@ -654,8 +612,14 @@ asynStatus c400drv::send_to_equipment(const char *writeBuffer, string &response)
 
     response = string(readBuffer);
 
-    cout << "Status: " << status << endl;
-    cout << "Response: " << readBuffer << endl;
+    if (status) {
+        epicsSnprintf(pasynUserEcho->errorMessage, pasynUserEcho->errorMessageSize,
+                  "%s:%s: status=%d, response=%s",
+                  driverName, functionName, status, string(readBuffer));
+    }
+
+    //cout << "Status: " << status << endl;
+    //cout << "Response: " << readBuffer << endl;
 
     return status;
 
@@ -664,6 +628,7 @@ asynStatus c400drv::send_to_equipment(const char *writeBuffer, string &response)
 asynStatus c400drv::send_to_equipment(const char *writeBuffer)
 {
     asynStatus status = asynSuccess;
+    const char *functionName = "send_to_equipment";
     size_t nRead, nActual;
     string null_str = "";
     int eomReason;
@@ -673,25 +638,31 @@ asynStatus c400drv::send_to_equipment(const char *writeBuffer)
     status = pasynOctetSyncIO->writeRead(pasynUserEcho, writeBuffer, strlen(writeBuffer), readBuffer,
                                      sizeof(readBuffer), TIMEOUT, &nActual, &nRead, &eomReason);
 
-    
-    cout << "Status: " << status << endl;
-    cout << "Response: " << readBuffer << endl;
+    if (status) {
+        epicsSnprintf(pasynUserEcho->errorMessage, pasynUserEcho->errorMessageSize,
+                  "%s:%s: status=%d, response=%s",
+                  driverName, functionName, status, string(readBuffer));
+    }
+
+    //cout << "Status: " << status << endl;
+    //cout << "Response: " << readBuffer << endl;
 
     return status;
 
 }
-asynStatus c400drv::get_to_equipment(const char *writeBuffer, int n_element, double &response)
+asynStatus c400drv::get_to_equipment(const char *command_ask, int n_element, double &response)
 {   
     asynStatus status = asynSuccess;
     string delimiter = ",";
     int pos = 0;
+    int index = 0;
     string result_array[15];
     string token;
     string val;
 
-    status = send_to_equipment(writeBuffer, val);
+    status = send_to_equipment(command_ask, val);
 
-    if (!status) {
+    if (status==asynSuccess) {
 
         token = val.substr(0, val.find("\n")+1);
         val = val.substr(token.length(), val.length() - token.length());
@@ -709,22 +680,27 @@ asynStatus c400drv::get_to_equipment(const char *writeBuffer, int n_element, dou
             }
             array_idx++;
         }
+
+        if (command_ask==C400_MSG_TRIGGER_START_ASK or command_ask==C400_MSG_TRIGGER_STOP_ASK or command_ask==C400_MSG_TRIGGER_PAUSE_ASK){
+            index = distance(trigger_source.begin(),find(trigger_source.begin(), trigger_source.end(), result_array[n_element]));
+            response = index;
+        }
+        else if (command_ask == C400_MSG_TRIGGER_MODE_ASK) {
+            index = distance(trigger_mode.begin(),find(trigger_mode.begin(), trigger_mode.end(), result_array[n_element]));
+            response = index;
+        }
+        else if (command_ask == C400_MSG_SYSTEM_IPMODE_ASK) {
+            index = distance(system_ipmode.begin(),find(system_ipmode.begin(), system_ipmode.end(), result_array[n_element]));
+            response = index;
+        }
+        else if (command_ask==C400_MSG_POLARITY_ASK){
+            index = distance(polarity.begin(),find(polarity.begin(), polarity.end(), result_array[n_element]));
+            response = index;
+        }
+        else {
+            response = stof(result_array[n_element]);
+        }
         
-        try {
-            if (result_array[n_element] == "P" or result_array[n_element] == "BNC") {
-                response = 1;
-            }
-            else if (result_array[n_element] == "N" or result_array[n_element] == "INTernal") {
-                response = 0;
-            }
-            else {
-                response = stof(result_array[n_element]);
-            }
-        }
-        catch (...){
-            response = 0;
-            return asynError;
-        }
         return status;
     }
     else {
@@ -741,21 +717,24 @@ asynStatus c400drv::set_to_equipment(const char *command_set, const char *comman
     string str_val;
     string cmd_msg_send;
 
+    str_channel = to_string(channel);
+    str_val = to_string(value);
+
     if (channel > 0){
-        str_channel = to_string(channel);
-        str_val = to_string(value);
 
         cmd_msg_send =  command_set + str_channel + " " + str_val;
         status = send_to_equipment(cmd_msg_send.c_str());
         status = get_to_equipment(command_ask, channel, response);
     }
     else{
-        
         if (command_set==C400_MSG_TRIGGER_START_SET or command_set==C400_MSG_TRIGGER_STOP_SET or command_set==C400_MSG_TRIGGER_PAUSE_SET){
-            if (int(value)==0)
-                str_val = "INTernal";
-            else if (int(value)==1)
-                str_val = "BNC";
+            str_val = trigger_source[(int)value];
+        }
+        else if (command_set == C400_MSG_TRIGGER_MODE_SET) {
+            str_val = trigger_mode[(int)value];
+        }
+        else if (command_set == C400_MSG_SYSTEM_IPMODE_SET) {
+            str_val = system_ipmode[(int)value];
         }
 
         cmd_msg_send =  command_set + str_val;
@@ -765,169 +744,70 @@ asynStatus c400drv::set_to_equipment(const char *command_set, const char *comman
     return status;
 }
 
-double c400drv::set_4_channels(const char *command_set, const char *command_ask, int param1, int param2, 
-                               int param3, int param4, int channel, double val)
+asynStatus c400drv::set_4_channels_to_equipment(const char *command_set, const char *command_ask, int param1, int param2, 
+                               int param3, int param4, int is_float, int channel, double &response)
 {
         asynStatus status = asynSuccess;
-        double res;
         double val_ch1;
         double val_ch2;
         double val_ch3;
         double val_ch4;
+        int val_ch1_int;
+        int val_ch2_int;
+        int val_ch3_int;
+        int val_ch4_int;
         string str_val_ch1;
         string str_val_ch2;
         string str_val_ch3;
         string str_val_ch4;
         string cmd_msg_send;
-        string cmd_msg_read;
 
-        // Check if the value to feed is a float or integer and handles it
+        if (is_float) {
+            getDoubleParam(param1, &val_ch1);
+            getDoubleParam(param2, &val_ch2);
+            getDoubleParam(param3, &val_ch3);
+            getDoubleParam(param4, &val_ch4);
 
-        getDoubleParam(param1, &val_ch1);
-        getDoubleParam(param2, &val_ch2);
-        getDoubleParam(param3, &val_ch3);
-        getDoubleParam(param4, &val_ch4);
-        
-        cout << "val1: " << val_ch1 << endl;
-        cout << "val2: " << val_ch2 << endl;
-        cout << "val3: " << val_ch3 << endl;
-        cout << "val4: " << val_ch4 << endl;
-
-        switch (channel)
-        {
-            case 1:
-            str_val_ch1 = __cxx11::to_string(val);
-            str_val_ch2 = __cxx11::to_string(val_ch2);
-            str_val_ch3 = __cxx11::to_string(val_ch3);
-            str_val_ch4 = __cxx11::to_string(val_ch4);
-            break;
-
-            case 2:
-            str_val_ch1 = __cxx11::to_string(val_ch1);
-            str_val_ch2 = __cxx11::to_string(val);
-            str_val_ch3 = __cxx11::to_string(val_ch3);
-            str_val_ch4 = __cxx11::to_string(val_ch4);
-            break;
-            
-            case 3:
-            str_val_ch1 = __cxx11::to_string(val_ch1);
-            str_val_ch2 = __cxx11::to_string(val_ch2);
-            str_val_ch3 = __cxx11::to_string(val);
-            str_val_ch4 = __cxx11::to_string(val_ch4);
-            break;
-
-            case 4:
-            str_val_ch1 = __cxx11::to_string(val_ch1);
-            str_val_ch2 = __cxx11::to_string(val_ch2);
-            str_val_ch3 = __cxx11::to_string(val_ch3);
-            str_val_ch4 = __cxx11::to_string(val);
-            break;
+        }
+        else {
+            getIntegerParam(param1, &val_ch1_int);
+            getIntegerParam(param2, &val_ch2_int);
+            getIntegerParam(param3, &val_ch3_int);
+            getIntegerParam(param4, &val_ch4_int);
+            val_ch1 = (float)val_ch1_int;
+            val_ch2 = (float)val_ch2_int;
+            val_ch3 = (float)val_ch3_int;
+            val_ch4 = (float)val_ch4_int;
         }
 
-        cmd_msg_send = command_set + str_val_ch1 + " " + str_val_ch2 + " "\
-                                        + str_val_ch3 + " " + str_val_ch4 + " ";
-        send_to_equipment(cmd_msg_send.c_str());
-        cmd_msg_read = command_ask;
+        if (command_set==C400_MSG_POLARITY_SET){
+            str_val_ch1 = polarity[(int)val_ch1];
+            str_val_ch2 = polarity[(int)val_ch2];
+            str_val_ch3 = polarity[(int)val_ch3];
+            str_val_ch4 = polarity[(int)val_ch4];
+        }
+        else {
+            str_val_ch1 = to_string(val_ch1);
+            str_val_ch2 = to_string(val_ch2);
+            str_val_ch3 = to_string(val_ch3);
+            str_val_ch4 = to_string(val_ch4);
+        }
 
+        cmd_msg_send = command_set + str_val_ch1 + " " + str_val_ch2 + " " + str_val_ch3 + " " + str_val_ch4 + " ";
+        status = send_to_equipment(cmd_msg_send.c_str());
+        status = get_to_equipment(command_ask, channel, response);
 
-        status = get_to_equipment(cmd_msg_read.c_str(), channel, res);
-
-        cout << "my res is: " << res << endl;
-        return res;
+        return status;
 }
 
-double c400drv::set_4_channels_int(const char *command_set, const char *command_ask, int param1, int param2, 
-                               int param3, int param4, int channel, double val, int to_string)
-{
-        asynStatus status = asynSuccess;
-        double res;
-        int val_ch1;
-        int val_ch2;
-        int val_ch3;
-        int val_ch4;
-        string str_val_ch1;
-        string str_val_ch2;
-        string str_val_ch3;
-        string str_val_ch4;
-        string cmd_msg_send;
-        string cmd_msg_read;
-
-        getIntegerParam(param1, &val_ch1);
-        getIntegerParam(param2, &val_ch2);
-        getIntegerParam(param3, &val_ch3);
-        getIntegerParam(param4, &val_ch4); 
-        
-        cout << "val1: " << val_ch1 << endl;
-        cout << "val2: " << val_ch2 << endl;
-        cout << "val3: " << val_ch3 << endl;
-        cout << "val4: " << val_ch4 << endl;
-
-        switch (channel)
-        {
-            case 1:
-            str_val_ch1 = __cxx11::to_string(val);
-            str_val_ch2 = __cxx11::to_string(val_ch2);
-            str_val_ch3 = __cxx11::to_string(val_ch3);
-            str_val_ch4 = __cxx11::to_string(val_ch4);
-            break;
-
-            case 2:
-            str_val_ch1 = __cxx11::to_string(val_ch1);
-            str_val_ch2 = __cxx11::to_string(val);
-            str_val_ch3 = __cxx11::to_string(val_ch3);
-            str_val_ch4 = __cxx11::to_string(val_ch4);
-            break;
-            
-            case 3:
-            str_val_ch1 = __cxx11::to_string(val_ch1);
-            str_val_ch2 = __cxx11::to_string(val_ch2);
-            str_val_ch3 = __cxx11::to_string(val);
-            str_val_ch4 = __cxx11::to_string(val_ch4);
-            break;
-
-            case 4:
-            str_val_ch1 = __cxx11::to_string(val_ch1);
-            str_val_ch2 = __cxx11::to_string(val_ch2);
-            str_val_ch3 = __cxx11::to_string(val_ch3);
-            str_val_ch4 = __cxx11::to_string(val);
-            break;
-        }
-
-        if (to_string){
-                str_val_ch1 = "N";
-
-            if (str_val_ch2.find("1") == 0)
-                str_val_ch2 = "P";
-            else
-                str_val_ch2 = "N";
-
-            if (str_val_ch3.find("1") == 0)
-                str_val_ch3 = "P";
-            else
-                str_val_ch3 = "N";
-
-            if (str_val_ch4.find("1") == 0)
-                str_val_ch4 = "P";
-            else
-                str_val_ch4 = "N";
-        }
-
-        cmd_msg_send = command_set + str_val_ch1 + " " + str_val_ch2 + " "\
-                                        + str_val_ch3 + " " + str_val_ch4 + " ";
-        send_to_equipment(cmd_msg_send.c_str());
-        cmd_msg_read = command_ask;
-        status = get_to_equipment(cmd_msg_read.c_str(), channel, res);
-        cout << "my res is: " << res << endl;
-        return res;
-}
-
-double c400drv::set_2_vals(const char *command_set, const char *command_ask, int param1, int param2, 
-                            int channel, double val, int is_float, int to_string)
+asynStatus c400drv::set_2_vals_to_equipment(const char *command_set, const char *command_ask, int param1, int param2, int is_float, int channel, double &response)
 {
         asynStatus status = asynSuccess;
         double res;
         double val_ch1;
         double val_ch2;
+        int val_ch1_int;
+        int val_ch2_int;
         string str_val_ch1;
         string str_val_ch2;
         string cmd_msg_send;
@@ -940,83 +820,130 @@ double c400drv::set_2_vals(const char *command_set, const char *command_ask, int
         }
 
         else{
-            int val_ch1;
-            int val_ch2;
-            int val_ch3;
-            int val_ch4;
-            getIntegerParam(param1, &val_ch1);
-            getIntegerParam(param2, &val_ch2);
+            getIntegerParam(param1, &val_ch1_int);
+            getIntegerParam(param2, &val_ch2_int);
+            val_ch1 = (float)val_ch1_int;
+            val_ch2 = (float)val_ch2_int;
         }
 
-        switch (channel)
-        {
-            case 1:
-            str_val_ch1 = __cxx11::to_string(val);
-            str_val_ch2 = __cxx11::to_string(val_ch2);
-            break;
-
-            case 2:
-            str_val_ch1 = __cxx11::to_string(val_ch1);
-            str_val_ch2 = __cxx11::to_string(val);
-            break;
-        }
-
-        if (to_string){
-            if (str_val_ch1.find("1") == 0)
-                str_val_ch1 = "P";
-            else
-                str_val_ch1 = "N";
-
-            if (str_val_ch2.find("1") == 0)
-                str_val_ch2 = "P";
-            else
-                str_val_ch2 = "N";
-        }
+        str_val_ch1 = to_string(val_ch1);
+        str_val_ch2 = to_string(val_ch2);
 
         cmd_msg_send = command_set + str_val_ch1 + " " + str_val_ch2;
-        send_to_equipment(cmd_msg_send.c_str());
-        cmd_msg_read = command_ask;
-
-        if (is_float)
-            status = get_to_equipment(cmd_msg_read.c_str(), channel, res);
-        else
-            status = get_to_equipment(cmd_msg_read.c_str(), channel, res);
-        cout << "my res is: " << res << endl;
-        return res;
+        status = send_to_equipment(cmd_msg_send.c_str());
+        status = get_to_equipment(command_ask, channel, res);
+        return status;
 }
 
-void c400drv::get_n_set_4_channels(const char *command_ask, int param1, int param2, int param3, int param4, 
-                                   int n_param1, int n_param2, int n_param3, int n_param4)
-{
-    string token;
+asynStatus c400drv::get_counts() {
+
+    asynStatus status = asynSuccess;
+
     double result_array[15];
-    string val;
-    string delimiter = ",";
+    string response;
+
     // string cmd_msg_read;
     double ch1_val;
     double ch2_val;
     double ch3_val;
     double ch4_val;
+    double trigger_counts_val;
 
-    size_t pos = 0;
+    status = send_to_equipment(C400_MSG_COUNTS_ASK, response);
+    parse_counts(result_array, response);
 
-    val = send_to_equipment(command_ask);
-    parse_counts(result_array, val);
-
-    ch1_val = result_array[1];
-    ch2_val = result_array[2];
-    ch3_val = result_array[3];
-    ch4_val = result_array[4];
-
-    cout << "ch1: " << ch1_val << endl;
-    cout << "ch2: " << ch2_val << endl;
-    cout << "ch3: " << ch3_val << endl;
-    cout << "ch4: " << ch4_val << endl;
+    ch1_val             = result_array[1];
+    ch2_val             = result_array[2];
+    ch3_val             = result_array[3];
+    ch4_val             = result_array[4];
+    trigger_counts_val  = result_array[6];
     
-    setDoubleParam (param1,      ch1_val);
-    setDoubleParam (param2,      ch2_val);
-    setDoubleParam (param3,      ch3_val);
-    setDoubleParam (param4,      ch4_val);
+    setDoubleParam (P_COUNT1, ch1_val);
+    setDoubleParam (P_COUNT2, ch2_val);
+    setDoubleParam (P_COUNT3, ch3_val);
+    setDoubleParam (P_COUNT4, ch4_val);
+    setDoubleParam (P_TRIGCOUNTS, trigger_counts_val);
+
+    return status;
+}
+
+asynStatus c400drv::get_buffer(){
+    asynStatus status = asynSuccess;
+    int end_loop_flag = 1;
+    int p_data_array_pos = 0; // Position in the waveform array to be updated in the loop
+    double temp_array[20]; // array to hold the data that is going to be placed in the PV array 
+    string data_not_collected_code = "-401,";
+    string base_msg = "FETch:COUNts? ";
+    string val; // Placeholder for the retrieved equipmente message
+    int buffer_size;
+    string get_full_buffer_str;
+    getIntegerParam (P_BUFFER,      &buffer_size);
+    get_full_buffer_str = base_msg + to_string(buffer_size);
+
+    pData_ch1 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
+    pData_ch2 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
+    pData_ch3 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
+    pData_ch4 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
+    pData_trigcounts = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
+
+    for (int i = 0; i < buffer_size; ++i) {  // Reset the array
+        pData_ch1[i] = 0;
+        pData_ch2[i] = 0;
+        pData_ch3[i] = 0;
+        pData_ch4[i] = 0;
+        pData_trigcounts[i] = 0;
+    }
+
+    // Need to parse several lines, each one ending with "\r\n"
+    // The equipment also return a blank line at the end, wich means that the last line is \r\n\r\n
+    // So we can use this to tell that this is the last line and get all previous ones as well
+    // the problem is that asyn matches any \r\n and stop listening to the equipment
+    // Soultion: Use the middle pattern that appears in the string \r\n\r\n, which is \n\r
+    // Return to the standard input eos afterwards 
+
+    while (end_loop_flag){
+
+        pasynOctetSyncIO->setInputEos(pasynUserEcho, "\n\r", strlen("\n\r"));
+        status = send_to_equipment(get_full_buffer_str.c_str(), val);
+        pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
+
+        istringstream iss(val);
+        for (string line; getline(iss, line); ){
+            const char* first_5_char = line.substr(0, 5).c_str();
+
+            if (strcmp(first_5_char, "FETch") == 0){
+                continue;
+            }
+            else if (strcmp(first_5_char,  data_not_collected_code.c_str()) == 0){
+                if (p_data_array_pos == buffer_size){
+                    end_loop_flag = 0;
+                    break;
+                }
+                continue;
+            }
+            else {
+                parse_counts(temp_array, line);
+
+                pData_ch1[p_data_array_pos]         = temp_array[1];
+                pData_ch2[p_data_array_pos]         = temp_array[2];
+                pData_ch3[p_data_array_pos]         = temp_array[3];
+                pData_ch4[p_data_array_pos]         = temp_array[4];
+                pData_trigcounts[p_data_array_pos]  = temp_array[6];
+
+                p_data_array_pos ++;
+            }
+        }
+    }
+
+    doCallbacksFloat64Array(pData_ch1,          buffer_size,  P_READ_BUFFER1,           0);
+    doCallbacksFloat64Array(pData_ch2,          buffer_size,  P_READ_BUFFER2,           0);
+    doCallbacksFloat64Array(pData_ch3,          buffer_size,  P_READ_BUFFER3,           0);
+    doCallbacksFloat64Array(pData_ch4,          buffer_size,  P_READ_BUFFER4,           0);
+    doCallbacksFloat64Array(pData_trigcounts,   buffer_size,  P_READ_BUFFER_TRIGCOUNTS, 0);
+
+    setIntegerParam (P_ACQUIRE, 0);
+
+    return status;
 }
 
 void c400drv::parse_counts(double *result_array, string val)
@@ -1039,7 +966,16 @@ void c400drv::parse_counts(double *result_array, string val)
         }
         try
         {
-            result_array[array_idx] = stod(token);
+            if (array_idx == 6) {
+                if (stod(token) < old_triggercounts) {
+                   accumulate_triggercounts = accumulate_triggercounts + 256;
+                }
+                old_triggercounts = stod(token);
+                result_array[array_idx] = accumulate_triggercounts + stod(token) + 1;
+            }
+            else {
+                result_array[array_idx] = stod(token);
+            }
         }
         catch(const exception& e)
         {
@@ -1051,7 +987,7 @@ void c400drv::parse_counts(double *result_array, string val)
         
         array_idx++;
     }
-        try
+    try
     {
         result_array[array_idx] = stod(val); //Append the last val
     }
@@ -1061,80 +997,6 @@ void c400drv::parse_counts(double *result_array, string val)
     }
     
 
-}
-
-void c400drv::set_mbbo(const char *command_set, const string *mbbo_list, int mbbo_value)
-{
-    string cmd_msg_send;
-    cout << mbbo_list[mbbo_value] << endl;
-
-    cmd_msg_send = command_set + mbbo_list[mbbo_value];
-    send_to_equipment(cmd_msg_send.c_str());
-}
-
-void c400drv::update_buffer(){
-    asynStatus status = asynSuccess;
-    int end_loop_flag = 1;
-    int p_data_array_pos = 0; // Position in the waveform array to be updated in the loop
-    double temp_array[20]; // array to hold the data that is going to be placed in the PV array 
-    string data_not_collected_code = "-401,";
-    string base_msg = "FETch:COUNts? ";
-    string val; // Placeholder for the retrieved equipmente message
-    int buffer_size;
-    string get_full_buffer_str;
-    getIntegerParam (P_BUFFER,      &buffer_size);
-    get_full_buffer_str = base_msg + __cxx11::to_string(buffer_size);
-    // Need to parse several lines, each one ending with "\r\n"
-    // The equipment also return a blank line at the end, wich means that the last line is \r\n\r\n
-    // So we can use this to tell that this is the last line and get all previous ones as well
-    // the problem is that asyn matches any \r\n and stop listening to the equipment
-    // Soultion: Use the middle pattern that appears in the string \r\n\r\n, which is \n\r
-    // Return to the standard input eos afterwards 
-
-    while (end_loop_flag){
-
-        pasynOctetSyncIO->setInputEos(pasynUserEcho, "\n\r", strlen("\n\r"));
-        status = send_to_equipment(get_full_buffer_str.c_str(), val);
-        pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
-
-        istringstream iss(val);
-        for (string line; getline(iss, line); ){
-            const char* first_5_char = line.substr(0, 5).c_str();
-
-            cout << "first 5 char: " << first_5_char << endl;
-            cout << line << endl;
-
-            if (strcmp(first_5_char, "FETch") == 0){
-                continue;
-            }
-            else if (strcmp(first_5_char,  data_not_collected_code.c_str()) == 0){
-                if (p_data_array_pos == buffer_size){
-                    end_loop_flag = 0;
-                    break;
-                }
-                continue;
-            }
-            else {
-                parse_counts(temp_array, line);
-
-                pData_ch1[p_data_array_pos] = temp_array[1];
-                pData_ch2[p_data_array_pos] = temp_array[2];
-                pData_ch3[p_data_array_pos] = temp_array[3];
-                pData_ch4[p_data_array_pos] = temp_array[4];
-                pData_time[p_data_array_pos] = temp_array[5];
-
-                // pData_[p_data_array_pos] = p_data_array_pos;
-                //cout << "Pdata pos " << p_data_array_pos << " Array data "  << pData_[p_data_array_pos] << endl;
-                p_data_array_pos ++;
-            }
-        }
-    }
-    cout << "callback to array" << endl;
-    doCallbacksFloat64Array(pData_ch1, buffer_size,  P_READ_BUFFER1, 0);
-    doCallbacksFloat64Array(pData_ch2, buffer_size,  P_READ_BUFFER2, 0);
-    doCallbacksFloat64Array(pData_ch3, buffer_size,  P_READ_BUFFER3, 0);
-    doCallbacksFloat64Array(pData_ch4, buffer_size,  P_READ_BUFFER4, 0);
-    doCallbacksFloat64Array(pData_time,buffer_size,  P_READ_BUFFER_TIME, 0);
 }
 
 //--------------------------------------------------------
