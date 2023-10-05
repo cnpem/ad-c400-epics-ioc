@@ -1,46 +1,30 @@
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <errno.h>
-#include <math.h>
-#include <iostream>
-#include <unistd.h>
-#include <sstream>
-#include <vector>
-#include <algorithm>
+/*
+    - Based on the IOC asynDrive c400 by Hugo Henrique Valim.
 
-using namespace std;
+    Developer: Guilherme Rodrigues de Lima
+    Email: guilherme.lima@lnls.br
+    Company: CNPEM/Sirius - Brazil
+    Date: 05/10/2023
+*/
 
-//EPICS's includes
-#include <epicsTypes.h>
-#include <epicsTime.h>
-#include <epicsThread.h>
-#include <epicsString.h>
-#include <epicsTimer.h>
-#include <epicsMutex.h>
-#include <epicsEvent.h>
-#include <iocsh.h>
-
-//AsynPortDriver's includes
-// #include <asynPortDriver.h>
-#include "asynOctetSyncIO.h"
-
-//c400's includes
 #include "c400drv.h"
-#include <epicsExport.h>
+using namespace std;
 
 void update_counts(void *drvPvt);
 static const char *driverName = "c400driver";
 
-c400drv::c400drv(const char *portName, char *ip)
-   : asynPortDriver(portName,
+c400drv::c400drv(const char *portName, const char *ip, int maxBuffers, size_t maxMemory, int priority, int stackSize)
+   : ADDriver(portName,
                     1, /* maxAddr */
-                    asynInt32Mask | asynFloat64Mask | asynFloat64ArrayMask | asynEnumMask | asynDrvUserMask, /* Interface mask */
-                    asynInt32Mask | asynFloat64Mask | asynFloat64ArrayMask | asynEnumMask,  /* Interrupt mask */
+                    0,
+                    maxBuffers,
+                    maxMemory,
+                    asynEnumMask | asynFloat64ArrayMask,
+                    asynEnumMask | asynFloat64ArrayMask, /* No interfaces beyond those set in ADDriver.cpp */
                     ASYN_CANBLOCK, /* asynFlags.  This driver does not block and it is not multi-device, so flag is 0 */
                     1, /* Autoconnect */
-                    0, /* Default priority */
-                    0) /* Default stack size*/
+                    priority,
+                    stackSize) // thread priority and stack size (0=default)
 {
     asynStatus status;
     const char *functionName = "c400drv";
@@ -66,62 +50,58 @@ c400drv::c400drv(const char *portName, char *ip)
     createParam(P_HIVO_ENABLEString2, asynParamInt32, &P_HIVO_ENABLE2);
     createParam(P_HIVO_ENABLEString3, asynParamInt32, &P_HIVO_ENABLE3);
     createParam(P_HIVO_ENABLEString4, asynParamInt32, &P_HIVO_ENABLE4);
-    createParam(P_PERIODString, asynParamFloat64, &P_PERIOD);
     createParam(P_POLARITYString1, asynParamInt32, &P_POLARITY1);
     createParam(P_POLARITYString2, asynParamInt32, &P_POLARITY2);
     createParam(P_POLARITYString3, asynParamInt32, &P_POLARITY3);
     createParam(P_POLARITYString4, asynParamInt32, &P_POLARITY4);
     createParam(P_PULSER_PeriodString, asynParamFloat64, &P_PULSER_Period);
     createParam(P_PULSER_WidthString, asynParamFloat64, &P_PULSER_Width);
-    createParam(P_ACQUIREString, asynParamInt32, &P_ACQUIRE);
-    createParam(P_BUFFERString, asynParamInt32, &P_BUFFER);
     createParam(P_BURSTString, asynParamFloat64, &P_BURST);
-    createParam(P_COUNT1String, asynParamFloat64, &P_COUNT1);
-    createParam(P_COUNT2String, asynParamFloat64, &P_COUNT2);
-    createParam(P_COUNT3String, asynParamFloat64, &P_COUNT3);
-    createParam(P_COUNT4String, asynParamFloat64, &P_COUNT4);
-    createParam(P_TRIGCOUNTSString, asynParamFloat64, &P_TRIGCOUNTS);
     createParam(P_ENCODERString, asynParamFloat64, &P_ENCODER);
-    createParam(P_TRIGGER_MODEString, asynParamInt32, &P_TRIGGER_MODE);
     createParam(P_TRIGGER_POLARITYString, asynParamInt32, &P_TRIGGER_POLARITY);
     createParam(P_TRIGGER_STARTString, asynParamInt32, &P_TRIGGER_START);
     createParam(P_TRIGGER_STOPString, asynParamInt32, &P_TRIGGER_STOP);
     createParam(P_TRIGGER_PAUSEString, asynParamInt32, &P_TRIGGER_PAUSE);
     createParam(P_SYSTEM_IPMODEString, asynParamInt32, &P_SYSTEM_IPMODE);
-    createParam(P_READ_BUFFER1String, asynParamFloat64Array,  &P_READ_BUFFER1);
-    createParam(P_READ_BUFFER2String, asynParamFloat64Array,  &P_READ_BUFFER2);
-    createParam(P_READ_BUFFER3String, asynParamFloat64Array,  &P_READ_BUFFER3);
-    createParam(P_READ_BUFFER4String, asynParamFloat64Array,  &P_READ_BUFFER4);
-    createParam(P_READ_BUFFER_TRIGCOUNTSString, asynParamFloat64Array,  &P_READ_BUFFER_TRIGCOUNTS);
 
-    pasynOctetSyncIO->connect(ip, 0, &pasynUserEcho, NULL);
+    status = pasynOctetSyncIO->connect(ip, 0, &pasynUserEcho, NULL);
     pasynOctetSyncIO->setInputEos(pasynUserEcho,  "\r\n", strlen("\r\n"));
     pasynOctetSyncIO->setOutputEos(pasynUserEcho, "\n",   strlen("\n"));
 
-    //Set default TRIGGER MODE as internal
-    //double result;
-    //status = set_to_equipment(C400_MSG_TRIGGER_MODE_SET, C400_MSG_TRIGGER_MODE_ASK, 0, 1, result);
-    //setIntegerParam (P_TRIGGER_MODE,      result);
+    if (status) {
+        setStringParam(ADStatusMessage, "Not connected to c400");
+        asynPrint(pasynUserEcho, ASYN_TRACE_ERROR,
+                "%s:%s Error: Not connected to c400: status=%d\n",
+                driverName, functionName, status);
+    }
 
     //Abort any counting while IOC is booting
-    send_to_equipment(C400_MSG_ABORT_SET);
+    status = send_to_equipment(C400_MSG_ABORT_SET);
+
+    // Set default parameters (1 point and 4 channels)
+    dims[0] = 1;
+    dims[1] = 4;
+    setIntegerParam(NDArraySizeX, 1);
+    setIntegerParam(NDArraySizeY, 4);
+    setStringParam(ADStatusMessage, "Connected to c400");
 
     status = (asynStatus) callParamCallbacks();
+
     status = (asynStatus)(epicsThreadCreate("c400countTask",
                           epicsThreadPriorityMedium,
                           epicsThreadGetStackSize(epicsThreadStackMedium),
                           (EPICSTHREADFUNC)::update_counts,
                           this) == NULL);
     if (status) {
-        printf("%s:%s: epicsThreadCreate failure\n", driverName, functionName);
-        return;
+        setStringParam(ADStatusMessage, "epicsThreadCreate failure");
+        asynPrint(pasynUserEcho, ASYN_TRACE_ERROR,
+                "%s:%s Error: epicsThreadCreate failure: status=%d\n",
+                driverName, functionName, status);
+        abort();
     }
-    
 }
 
-
 //------------ asynPortDriver extended method ------------
-
 
 void update_counts(void *drvPvt)
 {
@@ -132,25 +112,44 @@ void update_counts(void *drvPvt)
 
 void c400drv::update_counts(){
     asynStatus status = asynSuccess;
-    int is_counting;
-    int buffer_size;
-    double result;
+    const char* functionName = "update_counts";
+    int acquire;
+    int imageMode;
+    int bufferSize;
 
     while (true){
-        getIntegerParam(P_ACQUIRE, &is_counting);
-        getIntegerParam(P_BUFFER, &buffer_size);
+        getIntegerParam(ADAcquire, &acquire);
+        getIntegerParam(ADImageMode, &imageMode);
+        getIntegerParam(ADNumImages, &bufferSize);
 
-        if (is_counting and buffer_size == 0){
+        if ((acquire && imageMode == 0) || (acquire && imageMode == 3)) {
             status = get_counts();
-            status = get_to_equipment(C400_MSG_ENCODER_ASK, 1, result);
-            setDoubleParam (P_ENCODER, result);
         }
-        else if (is_counting and buffer_size < buffer_array_size and buffer_size != 0){
-            status = get_buffer();
+        else if (acquire && imageMode == 1) {
+            if (bufferSize > 0) {
+                status = get_counts();
+            }
+            else {
+                setIntegerParam (ADAcquire, 0);
+                callParamCallbacks();
+                asynPrint(pasynUserEcho, ASYN_TRACE_ERROR,
+                "%s:%s: ImageMode requires a number of images\n", 
+                driverName, functionName);
+            }
         }
-        callParamCallbacks();
+        else if (acquire && imageMode == 2){
+            if (bufferSize > 0 && bufferSize < buffer_array_size) {
+                status = get_buffer();
+            }
+            else {
+                setIntegerParam (ADAcquire, 0);
+                callParamCallbacks();
+                asynPrint(pasynUserEcho, ASYN_TRACE_ERROR,
+                "%s:%s: ImageMode requires a number of images\n", 
+                driverName, functionName);
+            }
+        }
     }
-
 }
 
 asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
@@ -162,23 +161,48 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
     double result;
     int res;
     int is_counting;
-    int buffer_size;
+    int bufferSize;
+
     /* Set the parameter in the parameter library. */
-    status = (asynStatus) setIntegerParam(function, value);
+    status = setIntegerParam(function, value);
 
     /* Fetch the parameter string name for possible use in debugging */
     getParamName(function, &paramName);
 
-    if (function == P_ACQUIRE and value == 0){
-        send_to_equipment(C400_MSG_ABORT_SET);
-        setIntegerParam (P_ACQUIRE,      0);
+    if (function == ADAcquire){
+        setIntegerParam (ADAcquire, value);
     }
-    else if (function == P_ACQUIRE and value == 1){
-        old_triggercounts = 0;
-        accumulate_triggercounts = 0;
-        send_to_equipment(C400_MSG_ACQUIRE_SET);
-        setIntegerParam (P_ACQUIRE,      1);
+    else if (function == ADImageMode){
+        if (value == 2) {
+            int bufferSize;
+            getIntegerParam(ADNumImages, &bufferSize);
+            status = set_to_equipment(C400_MSG_BUFFER_SET, C400_MSG_BUFFER_ASK, 0, bufferSize, result);
+        }
+        else {
+            status = set_to_equipment(C400_MSG_BUFFER_SET, C400_MSG_BUFFER_ASK, 0, 0, result);
+        }
+        setIntegerParam(ADImageMode, value);
     }
+
+    else if (function == ADNumImages){
+        int imageMode;
+        getIntegerParam(ADImageMode, &imageMode);
+        if (imageMode == 2){
+            if (value < buffer_array_size) {
+                status = set_to_equipment(C400_MSG_BUFFER_SET, C400_MSG_BUFFER_ASK, 0, value, result);
+            }
+            else {
+                asynPrint(pasynUserEcho, ASYN_TRACE_ERROR,
+                "%s:%s: The number of images cannot exceed the equipment buffer (maximum: 65536)\n", 
+                driverName, functionName);
+            }
+        }
+        else {
+            status = set_to_equipment(C400_MSG_BUFFER_SET, C400_MSG_BUFFER_ASK, 0, 0, result);
+        }
+        setIntegerParam(ADNumImages, value);
+    }
+
     else if (function == P_HIVO_ENABLE1) {
         status = set_4_channels_to_equipment(C400_MSG_HIVO_ENABLE_SET, C400_MSG_HIVO_ENABLE_ASK, 
                                 P_HIVO_ENABLE1, P_HIVO_ENABLE2, P_HIVO_ENABLE3, P_HIVO_ENABLE4, 0, 1, result);
@@ -219,18 +243,9 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
                                 P_POLARITY1, P_POLARITY2, P_POLARITY3, P_POLARITY4, 0, 4, result);
         setIntegerParam (P_POLARITY4,      result);
     }
-    else if (function == P_ACQUIRE){
-        setIntegerParam (P_ACQUIRE,      value);
-        status = (asynStatus) callParamCallbacks();
-        if (value==1)
-            send_to_equipment(C400_MSG_ACQUIRE_SET);
-        else if (value==0)
-            send_to_equipment(C400_MSG_ABORT_SET);
-        
-    }
-    else if (function == P_TRIGGER_MODE){
+    else if (function == ADTriggerMode){
         status = set_to_equipment(C400_MSG_TRIGGER_MODE_SET, C400_MSG_TRIGGER_MODE_ASK, 0, value, result);
-        setIntegerParam (P_TRIGGER_MODE,      result);
+        setIntegerParam (ADTriggerMode,      result);
     }
     else if (function == P_SYSTEM_IPMODE){
         status = set_to_equipment(C400_MSG_SYSTEM_IPMODE_SET, C400_MSG_SYSTEM_IPMODE_ASK, 0, value, result);
@@ -252,35 +267,37 @@ asynStatus c400drv::writeInt32(asynUser *pasynUser, epicsInt32 value)
         status = set_to_equipment(C400_MSG_TRIGGER_PAUSE_SET, C400_MSG_TRIGGER_PAUSE_ASK, 0, value, result);
         setIntegerParam (P_TRIGGER_PAUSE,      result);
     }
-    else if (function == P_BUFFER){
-        status = set_to_equipment(C400_MSG_BUFFER_SET, C400_MSG_BUFFER_ASK, 0, value, result);
-        setIntegerParam (P_BUFFER,      result);
-    }
 
     /* Do callbacks so higher layers see any changes */
 
     status = (asynStatus) callParamCallbacks();
 
-    if (status)
-        epicsSnprintf(pasynUser->errorMessage, pasynUser->errorMessageSize,
-                  "%s:%s: status=%d, function=%d, name=%s, value=%d",
-                  driverName, functionName, status, function, paramName, value);
-    else
+    if (status) {
+        asynPrint(pasynUser, ASYN_TRACE_ERROR,
+                "%s:%s Error: status=%d function=%d, value=%d\n",
+                driverName, functionName, status, function, value);
+    }
+    else {
         asynPrint(pasynUser, ASYN_TRACEIO_DRIVER,
               "%s:%s: function=%d, name=%s, value=%d\n",
               driverName, functionName, function, paramName, value);
+    }
     return status;
 }
-
 
 asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
 {
     int function = pasynUser->reason;
     asynStatus status = asynSuccess;
-    epicsInt32 run;
     const char *paramName;
     const char* functionName = "writeFloat64";
     double result;
+
+    /* Set the parameter in the parameter library. */
+    status = setDoubleParam(function, value);
+
+    /* Fetch the parameter string name for possible use in debugging */
+    getParamName(function, &paramName);
 
     if (function == P_DAC1) {
         status = set_to_equipment(C400_MSG_DAC_SET, C400_MSG_DAC_ASK, 1, value, result);
@@ -306,9 +323,9 @@ asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
         status = set_to_equipment(C400_MSG_BURST_SET, C400_MSG_BURST_ASK, 0, value, result);
         setDoubleParam (P_BURST,      result);
     }
-    else if (function == P_PERIOD){
+    else if (function == ADAcquireTime){
         status = set_to_equipment(C400_MSG_PERIOD_SET, C400_MSG_PERIOD_ASK, 0, value, result);
-        setDoubleParam (P_PERIOD,      result);
+        setDoubleParam (ADAcquireTime,      result);
     }
     else if (function == P_DHI1) {
         status = set_4_channels_to_equipment(C400_MSG_DHI_SET, C400_MSG_DHI_ASK, 
@@ -384,6 +401,16 @@ asynStatus c400drv::writeFloat64(asynUser *pasynUser, epicsFloat64 value)
 
     status = (asynStatus) callParamCallbacks();
 
+    if (status) {
+        asynPrint(pasynUser, ASYN_TRACE_ERROR,
+                "%s:%s Error: status=%d function=%d, value=%f\n",
+                driverName, functionName, status, function, value);
+    }
+    else {
+        asynPrint(pasynUser, ASYN_TRACEIO_DRIVER,
+              "%s:%s: function=%d, name=%s, value=%f\n",
+              driverName, functionName, function, paramName, value);
+    }
     return status;
 }
 
@@ -396,7 +423,6 @@ asynStatus c400drv::readInt32(asynUser *pasynUser, epicsInt32 *value)
     double res;
     
     getParamName(function, &paramName);
-    status = asynPortDriver::readInt32(pasynUser, value);
 
     if (function == P_HIVO_ENABLE1) {
         status = get_to_equipment(C400_MSG_HIVO_ENABLE_ASK, 1, res);
@@ -430,22 +456,29 @@ asynStatus c400drv::readInt32(asynUser *pasynUser, epicsInt32 *value)
         status = get_to_equipment(C400_MSG_POLARITY_ASK, 4, res);
         setIntegerParam (P_POLARITY4,          res);
     }
-    else if (function == P_BUFFER){
-        status = get_to_equipment(C400_MSG_BUFFER_ASK, 1, res);
-        setIntegerParam (P_BUFFER,          res);
+    else if (function == P_SYSTEM_IPMODE){
+        status = get_to_equipment(C400_MSG_SYSTEM_IPMODE_ASK, 1, res);
+        setIntegerParam (P_SYSTEM_IPMODE,      res);
     }
-    else {
-        setIntegerParam (function,          res);
+    else if (function == ADNumImages){
+        status = get_to_equipment(C400_MSG_BUFFER_ASK, 1, res);
+        setIntegerParam (ADNumImages,          res);
+    }
+    else if (function == ADTriggerMode){
+        status = get_to_equipment(C400_MSG_TRIGGER_MODE_ASK, 1, res);
+        setIntegerParam (ADTriggerMode,      res);
     }
 
-    if (status)
-        epicsSnprintf(pasynUser->errorMessage, pasynUser->errorMessageSize,
-                "%s:%s: status=%d, function=%d, name=%s",
-                driverName, functionName, status, function, paramName);
-    else
+    if (status) {
+        asynPrint(pasynUser, ASYN_TRACE_ERROR,
+                "%s:%s Error: status=%d function=%d, value=%d\n",
+                driverName, functionName, status, function, value);
+    }
+    else {
         asynPrint(pasynUser, ASYN_TRACEIO_DRIVER,
-                "%s:%s: function=%d, name=%s\n",
-                driverName, functionName, function, paramName);
+              "%s:%s: function=%d, name=%s, value=%d\n",
+              driverName, functionName, function, paramName, value);
+    }
     return status;
 }
 
@@ -458,7 +491,6 @@ asynStatus c400drv::readFloat64(asynUser *pasynUser, epicsFloat64 *value)
     double res;
 
     getParamName(function, &paramName);
-    status = asynPortDriver::readFloat64(pasynUser, value);
 
     if (function == P_DAC1) {
         status = get_to_equipment(C400_MSG_DAC_ASK, 1, res);
@@ -528,9 +560,9 @@ asynStatus c400drv::readFloat64(asynUser *pasynUser, epicsFloat64 *value)
         status = get_to_equipment(C400_MSG_HIVO_VOLTS_ASK, 4, res);
         setDoubleParam (P_HIVO_VOLTS4,          res);
     }
-    else if (function == P_PERIOD){
+    else if (function == ADAcquireTime){
         status = get_to_equipment(C400_MSG_PERIOD_ASK, 1, res);
-        setDoubleParam (P_PERIOD,          res);
+        setDoubleParam (ADAcquireTime,          res);
     }
     else if (function == P_PULSER_Period) {
         status = get_to_equipment(C400_MSG_PULSER_ASK, 1, res);
@@ -545,66 +577,69 @@ asynStatus c400drv::readFloat64(asynUser *pasynUser, epicsFloat64 *value)
         setDoubleParam (P_BURST,          res);
     }
 
-    if (status)
-        epicsSnprintf(pasynUser->errorMessage, pasynUser->errorMessageSize,
-                "%s:%s: status=%d, function=%d, name=%s",
-                driverName, functionName, status, function, paramName);
-    else
+    if (status) {
+        asynPrint(pasynUser, ASYN_TRACE_ERROR,
+                "%s:%s Error: status=%d function=%d, value=%f\n",
+                driverName, functionName, status, function, value);
+    }
+    else {
         asynPrint(pasynUser, ASYN_TRACEIO_DRIVER,
-                "%s:%s: function=%d, name=%s\n",
-                driverName, functionName, function, paramName);
-
+              "%s:%s: function=%d, name=%s, value=%f\n",
+              driverName, functionName, function, paramName, value);
+        }
     return status;
 }
 
-asynStatus c400drv::readFloat64Array(asynUser *pasynUser, epicsFloat64 *value,
-                                         size_t nElements, size_t *nIn)
-{
-    int function = pasynUser->reason;
-    size_t ncopy;
-    epicsInt32 itemp;
-    asynStatus status = asynSuccess;
-    epicsTimeStamp timeStamp;
-    const char *functionName = "readFloat64Array";
+/** Called when asyn clients call pasynEnum->read().
+  * The base class implementation simply prints an error message.
+  * @param pasynUser - pasynUser structure that encodes the reason and address.
+  * @param strings - Array of string pointers.
+  * @param values - Array of values
+  * @param severities - Array of severities
+  * @param nElements - Size of value array
+  * @param nIn - Number of elements actually returned */
+asynStatus c400drv::readEnum(asynUser *pasynUser, char *strings[], int values[], int severities[], size_t nElements, size_t *nIn)
+    {
+        const int function = pasynUser->reason;
+        const char* functionName = "readEnum";
+        asynStatus status = asynSuccess;
+        size_t index;
 
-    if (function == P_READ_BUFFER1) {
-        memcpy(value, pData_ch1, sizeof(epicsFloat64));
-        
+        if (function == ADTriggerMode) {
+            for (index = 0; ((index < (size_t)trigger_mode.size()) && (index < nElements)); index++){
+                if (strings[index]){
+                    free(strings[index]);
+                }
+                strings[index] = epicsStrDup(trigger_mode[index].c_str());
+                values[index] = index;
+                severities[index] = 0;
+            }
+            *nIn = index;
+        }
+        else if (function == ADImageMode) {
+            for (index = 0; ((index < (size_t)image_mode.size()) && (index < nElements)); index++){
+                if (strings[index]){
+                    free(strings[index]);
+                }
+                strings[index] = epicsStrDup(image_mode[index].c_str());
+                values[index] = index;
+                severities[index] = 0;
+            }
+            *nIn = index;
+        }
+        else {
+            *nIn = 0;
+            status = asynError;
+        }
+        return status;
     }
-    else if (function == P_READ_BUFFER2) {
-        memcpy(value, pData_ch2, sizeof(epicsFloat64));
-        
-    }
-    else if (function == P_READ_BUFFER3) {
-        memcpy(value, pData_ch3, sizeof(epicsFloat64));
-        
-    }
-    else if (function == P_READ_BUFFER4) {
-        memcpy(value, pData_ch4, sizeof(epicsFloat64));
-        
-    }
-
-    if (status)
-        epicsSnprintf(pasynUser->errorMessage, pasynUser->errorMessageSize,
-                  "%s:%s: status=%d, function=%d",
-                  driverName, functionName, status, function);
-    else
-        asynPrint(pasynUser, ASYN_TRACEIO_DRIVER,
-              "%s:%s: function=%d\n",
-              driverName, functionName, function);
-
-
-    return status;
-}
 
 asynStatus c400drv::send_to_equipment(const char *writeBuffer, string &response)
 {
     asynStatus status = asynSuccess;
     const char *functionName = "send_to_equipment";
     size_t nRead, nActual;
-    string null_str = "";
     int eomReason;
-    double readValue;
     char readBuffer[10000];
 
     status = pasynOctetSyncIO->writeRead(pasynUserEcho, writeBuffer, strlen(writeBuffer), readBuffer,
@@ -613,9 +648,14 @@ asynStatus c400drv::send_to_equipment(const char *writeBuffer, string &response)
     response = string(readBuffer);
 
     if (status) {
-        epicsSnprintf(pasynUserEcho->errorMessage, pasynUserEcho->errorMessageSize,
-                  "%s:%s: status=%d, response=%s",
-                  driverName, functionName, status, string(readBuffer));
+        asynPrint(pasynUserEcho, ASYN_TRACE_ERROR,
+                "%s:%s Error: status=%d, response=%s\n",
+                driverName, functionName, status, response);
+    }
+    else {
+        asynPrint(pasynUserEcho, ASYN_TRACEIO_DRIVER,
+              "%s:%s: status=%d, response=%s\n",
+              driverName, functionName, status, response);
     }
 
     //cout << "Status: " << status << endl;
@@ -630,18 +670,21 @@ asynStatus c400drv::send_to_equipment(const char *writeBuffer)
     asynStatus status = asynSuccess;
     const char *functionName = "send_to_equipment";
     size_t nRead, nActual;
-    string null_str = "";
-    int eomReason;
-    double readValue;    
+    int eomReason;   
     char readBuffer[10000];
 
     status = pasynOctetSyncIO->writeRead(pasynUserEcho, writeBuffer, strlen(writeBuffer), readBuffer,
                                      sizeof(readBuffer), TIMEOUT, &nActual, &nRead, &eomReason);
 
     if (status) {
-        epicsSnprintf(pasynUserEcho->errorMessage, pasynUserEcho->errorMessageSize,
-                  "%s:%s: status=%d, response=%s",
-                  driverName, functionName, status, string(readBuffer));
+        asynPrint(pasynUserEcho, ASYN_TRACE_ERROR,
+                "%s:%s Error: status=%d, response=%s\n",
+                driverName, functionName, status, string(readBuffer));
+    }
+    else {
+        asynPrint(pasynUserEcho, ASYN_TRACEIO_DRIVER,
+              "%s:%s: status=%d, response=%s\n",
+              driverName, functionName, status, string(readBuffer));
     }
 
     //cout << "Status: " << status << endl;
@@ -650,6 +693,38 @@ asynStatus c400drv::send_to_equipment(const char *writeBuffer)
     return status;
 
 }
+
+asynStatus c400drv::receive_to_equipment(string &response)
+{
+    asynStatus status = asynSuccess;
+    const char *functionName = "receive_to_equipment";
+    size_t nRead;
+    int eomReason;
+    char readBuffer[10000];
+
+    status = pasynOctetSyncIO->read(pasynUserEcho, readBuffer,
+                                     sizeof(readBuffer), TIMEOUT, &nRead, &eomReason);
+
+    response = string(readBuffer);
+
+    if (status > 1) {
+        asynPrint(pasynUserEcho, ASYN_TRACE_ERROR,
+                "%s:%s Error: status=%d, response=%s\n",
+                driverName, functionName, status, string(readBuffer));
+    }
+    else {
+        asynPrint(pasynUserEcho, ASYN_TRACEIO_DRIVER,
+              "%s:%s: status=%d, response=%s\n",
+              driverName, functionName, status, string(readBuffer));
+    }
+
+    //cout << "Status: " << status << endl;
+    //cout << "Response Receiver: " << readBuffer << endl;
+
+    return status;
+
+}
+
 asynStatus c400drv::get_to_equipment(const char *command_ask, int n_element, double &response)
 {   
     asynStatus status = asynSuccess;
@@ -836,183 +911,297 @@ asynStatus c400drv::set_2_vals_to_equipment(const char *command_set, const char 
 }
 
 asynStatus c400drv::get_counts() {
-
     asynStatus status = asynSuccess;
 
-    double result_array[15];
+    old_triggercounts = 0;
+    accumulate_triggercounts = 0;
+
+    Sample sample;
+
     string response;
+    string old_response = "";
+    double encoder;
+    int acquire;
+    int imageMode;
+    int numImages = 0;
+    int numImagesCounter = 0;
+    int imageCounter = 0;
 
-    // string cmd_msg_read;
-    double ch1_val;
-    double ch2_val;
-    double ch3_val;
-    double ch4_val;
-    double trigger_counts_val;
-
-    status = send_to_equipment(C400_MSG_COUNTS_ASK, response);
-    parse_counts(result_array, response);
-
-    ch1_val             = result_array[1];
-    ch2_val             = result_array[2];
-    ch3_val             = result_array[3];
-    ch4_val             = result_array[4];
-    trigger_counts_val  = result_array[6];
+    getIntegerParam(NDArrayCallbacks, &arrayCallbacks);
+    getIntegerParam(ADImageMode, &imageMode);
+    getIntegerParam(ADNumImages, &numImages);
+    getIntegerParam(ADAcquire, &acquire);
     
-    setDoubleParam (P_COUNT1, ch1_val);
-    setDoubleParam (P_COUNT2, ch2_val);
-    setDoubleParam (P_COUNT3, ch3_val);
-    setDoubleParam (P_COUNT4, ch4_val);
-    setDoubleParam (P_TRIGCOUNTS, trigger_counts_val);
+    setStringParam(ADStatusMessage, "Acquiring data");
+    setIntegerParam(NDArrayCounter, 0);
+    setIntegerParam(ADNumImagesCounter, 0);
 
+    // Get data type
+    getIntegerParam(NDDataType, (int *) &dataType);
+
+    // Start acquisition
+    status = send_to_equipment(C400_MSG_ACQUIRE_SET);
+    status = send_to_equipment(C400_MSG_COUNTS_ASK, old_response); //Required to remove the first empty acquisition.
+    
+    this->lock();
+    while(acquire) {
+
+        status = send_to_equipment(C400_MSG_COUNTS_ASK, response);
+
+        if(response != old_response) {
+            old_response = response;
+            //cout << "count: " << response << endl;
+            
+            // Allocate NDArray memory
+            pImage = this->pNDArrayPool->alloc(2, dims, dataType, 0, NULL);
+
+            parse_counts(&sample, response);
+
+            memcpy(pImage->pData, sample.array_count, pImage->dataSize);
+
+            pImage->timeStamp = sample.timestamp;
+            pImage->uniqueId = sample.trigger_counts;
+
+            // Set a bit of areadetector image/frame statistics...
+            getIntegerParam(NDArrayCounter, &imageCounter);
+            getIntegerParam(ADNumImagesCounter, &numImagesCounter);
+            imageCounter++;
+            numImagesCounter++;
+            setIntegerParam(NDArrayCounter, imageCounter);
+            setIntegerParam(ADNumImagesCounter, numImagesCounter);
+
+            // Get any attributes that have been defined for this driver
+            this->getAttributes(pImage->pAttributeList);
+            if (arrayCallbacks){
+                // Must release the lock here, or we can get into a deadlock, because we can
+                // block on the plugin lock, and the plugin can be calling us
+                this->unlock();
+                doCallbacksGenericPointer(pImage, NDArrayData, 0);
+                this->lock();
+            }
+            // Free the image buffer
+            pImage->release();
+            status = get_to_equipment(C400_MSG_ENCODER_ASK, 1, encoder);
+            setDoubleParam(P_ENCODER, encoder);
+
+            //check the image mode
+            if (imageMode == 0) {
+                setIntegerParam(ADAcquire, 0);
+            }
+            else if (imageMode == 1 && numImagesCounter >= numImages) {
+                setIntegerParam(ADAcquire, 0);
+            }
+
+            callParamCallbacks();
+            getIntegerParam(ADAcquire, &acquire);
+        }
+    }
+    this->unlock();
+    status = send_to_equipment(C400_MSG_ABORT_SET);
+    setIntegerParam(ADAcquire, 0);
+    setStringParam(ADStatusMessage, "Acquisition stopped");
+    callParamCallbacks();
     return status;
 }
 
 asynStatus c400drv::get_buffer(){
     asynStatus status = asynSuccess;
-    int end_loop_flag = 1;
-    int p_data_array_pos = 0; // Position in the waveform array to be updated in the loop
-    double temp_array[20]; // array to hold the data that is going to be placed in the PV array 
-    string data_not_collected_code = "-401,";
-    string base_msg = "FETch:COUNts? ";
-    string val; // Placeholder for the retrieved equipmente message
-    int buffer_size;
+
+    old_triggercounts = 0;
+    accumulate_triggercounts = 0;
+
+    string first_5_char;
+    string fetch_5_char = "FETch";
+    string error_5_char = "-401,";
+
+    Sample sample;
+
+    string response; // Placeholder for the retrieved equipmente message
+    string line;
+
+    int acquire;
+    int acquire_buffer = 1;
+    int numImages;
+    int numImagesCounter = 0;
+    int imageCounter     = 0;
+    
+    getIntegerParam(NDArrayCallbacks, &arrayCallbacks);
+    getIntegerParam(ADAcquire, &acquire);
+    getIntegerParam(ADNumImages, &numImages);
+
+    setStringParam(ADStatusMessage, "Acquiring data");
+    setIntegerParam(NDArrayCounter, 0);
+    setIntegerParam(ADNumImagesCounter, 0);
+
     string get_full_buffer_str;
-    getIntegerParam (P_BUFFER,      &buffer_size);
-    get_full_buffer_str = base_msg + to_string(buffer_size);
+    get_full_buffer_str = C400_MSG_COUNTS_ASK + to_string(numImages);
 
-    pData_ch1 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
-    pData_ch2 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
-    pData_ch3 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
-    pData_ch4 = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
-    pData_trigcounts = (epicsFloat64 *)calloc(buffer_size, sizeof(epicsFloat64));
+    // Get data type
+    getIntegerParam(NDDataType, (int *) &dataType);
 
-    for (int i = 0; i < buffer_size; ++i) {  // Reset the array
-        pData_ch1[i] = 0;
-        pData_ch2[i] = 0;
-        pData_ch3[i] = 0;
-        pData_ch4[i] = 0;
-        pData_trigcounts[i] = 0;
-    }
+    // Start acquisition
+    status = send_to_equipment(C400_MSG_ACQUIRE_SET);
 
-    // Need to parse several lines, each one ending with "\r\n"
-    // The equipment also return a blank line at the end, wich means that the last line is \r\n\r\n
-    // So we can use this to tell that this is the last line and get all previous ones as well
-    // the problem is that asyn matches any \r\n and stop listening to the equipment
-    // Soultion: Use the middle pattern that appears in the string \r\n\r\n, which is \n\r
-    // Return to the standard input eos afterwards 
+    this->lock();
+    while (acquire_buffer && acquire){
 
-    while (end_loop_flag){
+        //status = pasynOctetSyncIO->flush(pasynUserEcho);
+        status = send_to_equipment(get_full_buffer_str.c_str(), response);
 
-        pasynOctetSyncIO->setInputEos(pasynUserEcho, "\n\r", strlen("\n\r"));
-        status = send_to_equipment(get_full_buffer_str.c_str(), val);
-        pasynOctetSyncIO->setInputEos(pasynUserEcho, "\r\n", strlen("\r\n"));
+        istringstream iss(response);
+        getline(iss, line);
+        getline(iss, line);
 
-        istringstream iss(val);
-        for (string line; getline(iss, line); ){
-            const char* first_5_char = line.substr(0, 5).c_str();
+        while (line != "" && acquire)  {
 
-            if (strcmp(first_5_char, "FETch") == 0){
+            first_5_char = line.substr(0, 5);
+
+            if (strcmp(first_5_char.c_str(), fetch_5_char.c_str()) == 0){
                 continue;
             }
-            else if (strcmp(first_5_char,  data_not_collected_code.c_str()) == 0){
-                if (p_data_array_pos == buffer_size){
-                    end_loop_flag = 0;
-                    break;
-                }
-                continue;
+            else if (strcmp(first_5_char.c_str(),  error_5_char.c_str()) == 0){
+                break;
             }
             else {
-                parse_counts(temp_array, line);
+                //cout << "count: " << line << endl;
 
-                pData_ch1[p_data_array_pos]         = temp_array[1];
-                pData_ch2[p_data_array_pos]         = temp_array[2];
-                pData_ch3[p_data_array_pos]         = temp_array[3];
-                pData_ch4[p_data_array_pos]         = temp_array[4];
-                pData_trigcounts[p_data_array_pos]  = temp_array[6];
+                // Allocate NDArray memory
+                pImage = pNDArrayPool->alloc(2, dims, dataType, 0, NULL);
 
-                p_data_array_pos ++;
+                parse_counts(&sample, line);
+
+                memcpy(pImage->pData, sample.array_count, pImage->dataSize);
+
+                pImage->timeStamp = sample.timestamp;
+                pImage->uniqueId = sample.trigger_counts;
+
+                // Set a bit of areadetector image/frame statistics...
+                getIntegerParam(NDArrayCounter, &imageCounter);
+                getIntegerParam(ADNumImagesCounter, &numImagesCounter);
+                imageCounter++;
+                numImagesCounter++;
+                setIntegerParam(NDArrayCounter, imageCounter);
+                setIntegerParam(ADNumImagesCounter, numImagesCounter);
+
+                // Get any attributes that have been defined for this driver
+                this->getAttributes(pImage->pAttributeList);
+                if (arrayCallbacks){
+                    // Must release the lock here, or we can get into a deadlock, because we can
+                    // block on the plugin lock, and the plugin can be calling us
+                    this->unlock();
+                    doCallbacksGenericPointer(pImage, NDArrayData, 0);
+                    this->lock();
+                }
+                //Free the image buffer
+                pImage->release();
             }
+            callParamCallbacks();
+            if (numImagesCounter < numImages){
+                status = receive_to_equipment(line);
+                if (status) {
+                    break;
+                }
+            }
+            else if (numImagesCounter >= numImages) {
+                acquire_buffer = 0;
+                setIntegerParam(ADAcquire, 0);
+                callParamCallbacks();
+                break;
+            }
+
         }
+        callParamCallbacks();
+        getIntegerParam(ADAcquire, &acquire);
     }
-
-    doCallbacksFloat64Array(pData_ch1,          buffer_size,  P_READ_BUFFER1,           0);
-    doCallbacksFloat64Array(pData_ch2,          buffer_size,  P_READ_BUFFER2,           0);
-    doCallbacksFloat64Array(pData_ch3,          buffer_size,  P_READ_BUFFER3,           0);
-    doCallbacksFloat64Array(pData_ch4,          buffer_size,  P_READ_BUFFER4,           0);
-    doCallbacksFloat64Array(pData_trigcounts,   buffer_size,  P_READ_BUFFER_TRIGCOUNTS, 0);
-
-    setIntegerParam (P_ACQUIRE, 0);
-
+    this->unlock();
+    status = send_to_equipment(C400_MSG_ABORT_SET);
+    setIntegerParam(ADAcquire, 0);
+    setStringParam(ADStatusMessage, "Acquisition stopped");
+    callParamCallbacks();
     return status;
 }
 
-void c400drv::parse_counts(double *result_array, string val)
+asynStatus c400drv::parse_counts(Sample *sample, string val)
 {
+    asynStatus status = asynSuccess;
+    const char* functionName = "parse_counts";
+
     string delimiter = ",";
     size_t pos = 0;
     string token;
     string last_char;
 
+    vector<string> result;
+
+    // If necessary, remove the first line ("\n")
     token = val.substr(0, val.find("\n")+1);
     val = val.substr(token.length(), val.length() - token.length());
 
-    // result_array[0] = token;
-    int array_idx = 0;
+    // Parse (split) a string using string delimiter
     while ((pos = val.find(delimiter)) != string::npos) {
         token = val.substr(0, pos);
         last_char = token[token.length() - 1];
         if (last_char == "S" or last_char == "V"){
-            token = token.substr(0, token.length() - 2);
+            token = token.substr(0, token.length()-2);
         }
-        try
-        {
-            if (array_idx == 6) {
-                if (stod(token) < old_triggercounts) {
-                   accumulate_triggercounts = accumulate_triggercounts + 256;
-                }
-                old_triggercounts = stod(token);
-                result_array[array_idx] = accumulate_triggercounts + stod(token) + 1;
-            }
-            else {
-                result_array[array_idx] = stod(token);
-            }
-        }
-        catch(const exception& e)
-        {
-            cerr << e.what() << '\n';
-        }
-        
-        
+        result.push_back(token);
         val.erase(0, pos + delimiter.length());
+    }
+    result.push_back(val); //last string
+
+    // Add value in struct Sample
+    try {
+        sample->integration = stod(result.at(0));
+        sample->array_count[0] = stoi(result.at(1));
+        sample->array_count[1] = stoi(result.at(2));
+        sample->array_count[2] = stoi(result.at(3));
+        sample->array_count[3] = stoi(result.at(4));
+        sample->timestamp = stod(result.at(5));
         
-        array_idx++;
+        //trigger counts of the c400 is an 8-bit register, 
+        //therefore, logic was implemented for counts above 255.
+        if (stoi(result.at(6)) < old_triggercounts) {
+            accumulate_triggercounts = accumulate_triggercounts + 256;
+        }
+        old_triggercounts = stoi(result.at(6));
+        sample->trigger_counts = accumulate_triggercounts + stoi(result.at(6)) + 1;
+
+        sample->low_level[0] = stod(result.at(7));
+        sample->low_level[1] = stod(result.at(8));
+        sample->low_level[2] = stod(result.at(9));
+        sample->low_level[3] = stod(result.at(10));
+        sample->overflow = stoi(result.at(11));
     }
-    try
-    {
-        result_array[array_idx] = stod(val); //Append the last val
+    catch(const exception& e) {
+        asynPrint(pasynUserEcho, ASYN_TRACE_ERROR,
+                "%s:%s Warning: Incomplete equipment response - Exception: %s\n",
+                driverName, functionName, e.what());
+        status = asynError;
     }
-    catch(const exception& e)
-    {
-        cerr << e.what() << '\n';
-    }
-    
+
+    return status;
 
 }
 
 //--------------------------------------------------------
 
-extern "C" int c400CreateDriver(const char *portName, char *ip){
-    new c400drv(portName, ip);
+extern "C" int c400CreateDriver(const char *portName, const char *ip, int maxBuffers, size_t maxMemory, int priority, int stackSize){
+    new c400drv(portName, ip, maxBuffers, maxMemory, priority, stackSize);
     return(asynSuccess);
 }
 
 static const iocshArg portNameArg = { "Port name", iocshArgString};
 static const iocshArg ipArg = { "IP", iocshArgString};
-static const iocshArg * const createDriverArgs[] = {&portNameArg, &ipArg};
-static const iocshFuncDef createDriverFuncDef = {"c400CreateDriver", 2, createDriverArgs};
+static const iocshArg maxBufferArg = { "Max Buffer", iocshArgString};
+static const iocshArg maxMemoryArg = { "Max Memory", iocshArgString};
+static const iocshArg priorityArg = {"priority", iocshArgInt};
+static const iocshArg stackSizeArg = {"stackSize", iocshArgInt};
+
+static const iocshArg * const createDriverArgs[] = {&portNameArg, &ipArg, &maxBufferArg, &maxMemoryArg, &priorityArg, &stackSizeArg};
+static const iocshFuncDef createDriverFuncDef = {"c400CreateDriver", 6, createDriverArgs};
 
 static void createDriverCallFunc(const iocshArgBuf *args){
-    c400CreateDriver(args[0].sval, args[1].sval);
+    c400CreateDriver(args[0].sval, args[1].sval, args[2].ival, args[3].ival, args[4].ival, args[5].ival);
 }
 
 void c400drvRegister(void){

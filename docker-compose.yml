@@ -11,3 +11,4 @@ services:
         REPONAME: c400
         RUNDIR: /opt/c400
         BUILD_STAGE_VERSION: latest
+        RUNTIME_PACKAGES: libxml2 libtiff5
