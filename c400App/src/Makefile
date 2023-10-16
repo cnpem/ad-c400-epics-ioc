@@ -13,10 +13,6 @@ DBD += c400.dbd
 $(PROD_NAME)_DBD += c400drv.dbd
 $(PROD_NAME)_DBD += drvAsynIPPort.dbd
 
-$(PROD_NAME)_DBD += NDFileHDF5.dbd
-PROD_LIBS += hdf5
-PROD_LIBS += hdf5_hl
-
 $(PROD_NAME)_SRCS += c400drv.cpp
 $(PROD_NAME)_SRCS += c400_registerRecordDeviceDriver.cpp
 
