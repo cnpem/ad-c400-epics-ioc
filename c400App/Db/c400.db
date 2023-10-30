@@ -1,3 +1,34 @@
+include "ADBase.template"
+
+#########################################################
+###### Macro define default PV's ADBase.template #######
+#########################################################
+
+record(mbbo, "$(P)$(R)TriggerMode")
+{
+   field(PINI, "NO")
+}
+record(ao, "$(P)$(R)AcquireTime")
+{
+   field(PINI, "NO")
+}
+record(longout, "$(P)$(R)NumImages")
+{
+   field(PINI, "NO")
+}
+record(mbbo, "$(P)$(R)ImageMode")
+{
+   field(PINI, "YES")
+}
+record(mbbo, "$(P)$(R)DataType")
+{  
+   field(VAL,  "4")
+   field(PINI, "YES")
+}
+
+#########################################################
+#########################################################
+
 record(ai, "$(P)$(R)DAC_ch1_RBV")
 {
    field(DESC,"Get DAC for ch1")
@@ -407,26 +438,6 @@ record(bo, "$(P)$(R)HIVO_ENABLE_ch4")
     field(ONAM, "1")
 }
 
-record(ai, "$(P)$(R)PERIOD_RBV")
-{
-   field(DESC,"Get PERIOD time")
-   #field(PINI, "1")
-   field(DTYP, "asynFloat64")
-   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PERIOD")
-   field(PREC, "5")
-   field(SCAN, "I/O Intr")
-   field(EGU,"s")
-}
-
-record(ao, "$(P)$(R)PERIOD")
-{
-   field(DESC,"Set PERIOD time")
-   field(DTYP, "asynFloat64")
-   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))PERIOD")
-   field(PREC, "5")
-   field(EGU,"s")
-}
-
 record(bi, "$(P)$(R)POLARITY_ch1_RBV")
 {
     field(DTYP, "asynInt32")
@@ -563,47 +574,6 @@ record(ao, "$(P)$(R)PULSER_WIDTH")
    field(EGU,"ns")
 }
 
-record(mbbo, "$(P)$(R)ACQUIRE")
-{
-    field(DTYP, "asynInt32")
-    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))ACQUIRE")
-    field(ZRST, "Done")
-    field(ZRVL, "0")
-    field(ONST, "Acquiring")
-    field(ONVL, "1")
-}
-
-record(mbbi, "$(P)$(R)ACQUIRE_RBV")
-{
-    field(DTYP, "asynInt32")
-    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))ACQUIRE")
-    field(ZRST, "Done")
-    field(ZRVL, "0")
-    field(ONST, "Acquiring")
-    field(ONVL, "1")
-    field(SCAN, "I/O Intr")
-}
-
-record(ai, "$(P)$(R)BUFFER_SIZE_RBV")
-{
-   field(DESC,"Get BUFFER size")
-   field(PINI, "1")
-   field(DTYP, "asynInt32")
-   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))BUFFER")
-   field(PREC, "5")
-   field(SCAN, "I/O Intr")
-   #field(EGU,"s")
-}
-
-record(ao, "$(P)$(R)BUFFER_SIZE")
-{
-   field(DESC,"Set BUFFER size")
-   field(DTYP, "asynInt32")
-   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))BUFFER")
-   field(PREC, "5")
-   #field(EGU,"s")
-}
-
 record(ai, "$(P)$(R)BURST_SIZE_RBV")
 {
    field(DESC,"Get BURST size")
@@ -612,7 +582,6 @@ record(ai, "$(P)$(R)BURST_SIZE_RBV")
    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))BURST")
    field(PREC, "5")
    field(SCAN, "I/O Intr")
-   #field(EGU,"s")
 }
 
 record(ao, "$(P)$(R)BURST_SIZE")
@@ -621,50 +590,9 @@ record(ao, "$(P)$(R)BURST_SIZE")
    field(DTYP, "asynFloat64")
    field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))BURST")
    field(PREC, "5")
-   #field(EGU,"s")
 }
 
-record(ai, "$(P)$(R)COUNT_ch1")
-{
-   field(DESC,"Get ch1 count")
-   field(DTYP, "asynFloat64")
-   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))COUNT1")
-   field(PREC, "5")
-   field(SCAN, "I/O Intr")
-   #field(EGU,"s")
-}
-
-record(ai, "$(P)$(R)COUNT_ch2")
-{
-   field(DESC,"Get ch2 count")
-   field(DTYP, "asynFloat64")
-   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))COUNT2")
-   field(PREC, "5")
-   field(SCAN, "I/O Intr")
-   #field(EGU,"s")
-}
-
-record(ai, "$(P)$(R)COUNT_ch3")
-{
-   field(DESC,"Get ch3 count")
-   field(DTYP, "asynFloat64")
-   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))COUNT3")
-   field(PREC, "5")
-   field(SCAN, "I/O Intr")
-   #field(EGU,"s")
-}
-
-record(ai, "$(P)$(R)COUNT_ch4")
-{
-   field(DESC,"Get ch4 count")
-   field(DTYP, "asynFloat64")
-   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))COUNT4")
-   field(PREC, "5")
-   field(SCAN, "I/O Intr")
-   #field(EGU,"s")
-}
-
-record(ai, "$(P)$(R)READ_ENCODER")
+record(ai, "$(P)$(R)ENCODER_RBV")
 {
    field(DESC,"Return the current encoder count.")
    # field(PINI, "1")
@@ -673,26 +601,6 @@ record(ai, "$(P)$(R)READ_ENCODER")
    field(PREC, "5")
    field(SCAN, "I/O Intr")
    field(EGU,"counts")
-}
-
-record(mbbo, "$(P)$(R)TRIGGER_MODE")
-{
-   field(DTYP, "asynInt32")
-   field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))TRIGGER_MODE")
-   field(ZRST, "CUSTom")
-   field(ZRVL, "0")
-   field(ONST, "INTernal")
-   field(ONVL, "1")
-   field(TWST, "EXTERNAL_START")
-   field(TWVL, "2")
-   field(THST, "EXTERNAL_START_STOP")
-   field(THVL, "3")
-   field(FRST, "EXTERNAL_START_HOLD")
-   field(FRVL, "4")
-   field(FVST, "EXTERNAL_WINDOWED")
-   field(FVVL, "5")
-   field(SXST, "DISCRIMINATOR_SWEEP")
-   field(SXVL, "6")
 }
 
 record(bi, "$(P)$(R)TRIGGER_POLARITY_RBV")
@@ -778,81 +686,4 @@ record(bo, "$(P)$(R)TRIGGER_PAUSE")
     field(OUT,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))TRIGGER_PAUSE")
     field(ZNAM, "INTernal")
     field(ONAM, "BNC")
-}
-
-record(waveform, "$(P)$(R)READ_BUFFER_ch1") 
-{
-    field(DESC, "description")
-    field(DTYP, "asynFloat64ArrayIn")
-    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER1")
-    field(FTVL, "DOUBLE")
-    field(NELM, "65536")
-    field(SCAN, "I/O Intr")
-   #  field(SCAN, "1 second")
-}
-
-record(waveform, "$(P)$(R)READ_BUFFER_ch2") 
-{
-    field(DESC, "description")
-    field(DTYP, "asynFloat64ArrayIn")
-    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER2")
-    field(FTVL, "DOUBLE")
-    field(NELM, "65536")
-    field(SCAN, "I/O Intr")
-   #  field(SCAN, "1 second")
-}
-
-record(waveform, "$(P)$(R)READ_BUFFER_ch3") 
-{
-    field(DESC, "description")
-    field(DTYP, "asynFloat64ArrayIn")
-    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER3")
-    field(FTVL, "DOUBLE")
-    field(NELM, "65536")
-    field(SCAN, "I/O Intr")
-   #  field(SCAN, "1 second")
-}
-
-record(waveform, "$(P)$(R)READ_BUFFER_ch4") 
-{
-    field(DESC, "description")
-    field(DTYP, "asynFloat64ArrayIn")
-    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER4")
-    field(FTVL, "DOUBLE")
-    field(NELM, "65536")
-    field(SCAN, "I/O Intr")
-   #  field(SCAN, "1 second")
-}
-
-record(waveform, "$(P)$(R)READ_BUFFER_TIME") 
-{
-    field(DESC, "description")
-    field(DTYP, "asynFloat64ArrayIn")
-    field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_BUFFER_TIME")
-    field(FTVL, "DOUBLE")
-    field(NELM, "65536")
-    field(SCAN, "I/O Intr")
-   #  field(SCAN, "1 second")
-}
-
-record(mbbo, "$(P)$(R)READ_STATUS")
-{
-   field(DTYP, "asynInt32")
-   field(INP,  "@asyn($(PORT),$(ADDR),$(TIMEOUT))READ_DIGITAL")
-   field(ZRST, "Connected")
-   field(ZRVL, "0")
-   field(ONST, "Pending/Busy")
-   field(ONVL, "1")
-   field(TWST, "Error")
-   field(TWVL, "2")
-   field(THST, "Output changed")
-   field(THVL, "4")
-   field(FRST, "Urgent device error")
-   field(FRVL, "6")
-   field(FVST, "Updating firmware")
-   field(FVVL, "8")
-   field(SXST, "Starting up")
-   field(SXVL, "9")
-   field(SVST, "Measuring")
-   field(SVVL, "16")
 }

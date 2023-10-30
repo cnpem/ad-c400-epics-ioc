@@ -1,5 +1,45 @@
-#include "asynPortDriver.h"
-#include <array>
+/*
+    - Based on the IOC asynDrive c400 by Hugo Henrique Valim.
+
+    Developer: Guilherme Rodrigues de Lima
+    Email: guilherme.lima@lnls.br
+    Company: CNPEM/Sirius - Brazil
+    Date: 05/10/2023
+*/
+
+// Standard includes
+#include <vector>
+#include <sys/stat.h>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <errno.h>
+#include <locale>
+#include <map>
+#include <algorithm>
+
+//EPICS's includes
+#include <epicsTypes.h>
+#include <epicsTime.h>
+#include <epicsThread.h>
+#include <epicsString.h>
+#include <epicsTimer.h>
+#include <epicsMutex.h>
+#include <epicsEvent.h>
+#include <iocsh.h>
+#include <epicsExport.h>
+
+// areaDetector includes
+#include <ADDriver.h>
+
+// Asyn driver includes
+#include "asynOctetSyncIO.h"
+
+using namespace std;
 
 /* These are the drvInfo strings that are used to identify the parameters.
  * They are used by asyn clients, including standard asyn device support */
@@ -25,34 +65,21 @@
 #define P_HIVO_ENABLEString2            "HIVO_ENABLE2"        /* asynInt32,    r/w */
 #define P_HIVO_ENABLEString3            "HIVO_ENABLE3"        /* asynInt32,    r/w */
 #define P_HIVO_ENABLEString4            "HIVO_ENABLE4"        /* asynInt32,    r/w */
-#define P_PERIODString                  "PERIOD"              /* asynFloat64,  r/w */
 #define P_POLARITYString1               "POLARITY1"           /* asynInt32,    r/w */
 #define P_POLARITYString2               "POLARITY2"           /* asynInt32,    r/w */
 #define P_POLARITYString3               "POLARITY3"           /* asynInt32,    r/w */
 #define P_POLARITYString4               "POLARITY4"           /* asynInt32,    r/w */
 #define P_PULSER_PeriodString           "PULSER_Period"       /* asynFloat64,  r/w */
 #define P_PULSER_WidthString            "PULSER_Width"        /* asynFloat64,  r/w */
-#define P_ACQUIREString                 "ACQUIRE"             /* asynInt32,    r/w */
-#define P_BUFFERString                  "BUFFER"              /* asynInt32,   r/w */
 #define P_BURSTString                   "BURST"               /* asynFloat64,  r/w */
-#define P_COUNT1String                  "COUNT1"              /* asynFloat64,  r/o */
-#define P_COUNT2String                  "COUNT2"              /* asynFloat64,  r/o */
-#define P_COUNT3String                  "COUNT3"              /* asynFloat64,  r/o */
-#define P_COUNT4String                  "COUNT4"              /* asynFloat64,  r/o */
 #define P_ENCODERString                 "ENCODER"             /* asynFloat64,  r/o */
-#define P_TRIGGER_MODEString            "TRIGGER_MODE"        /* asynInt32,    r/w */
 #define P_TRIGGER_POLARITYString        "TRIGGER_POLARITY"    /* asynInt32,    r/w */
 #define P_TRIGGER_STARTString           "TRIGGER_START"       /* asynInt32,    r/w */
 #define P_TRIGGER_STOPString            "TRIGGER_STOP"        /* asynInt32,    r/w */
 #define P_TRIGGER_PAUSEString           "TRIGGER_PAUSE"       /* asynInt32,    r/w */
 #define P_SYSTEM_IPMODEString           "SYSTEM_IPMODE"       /* asynInt32,    r/w */
-#define P_READ_BUFFER1String            "READ_BUFFER1"         /* asynFloat64Array,  r/o */
-#define P_READ_BUFFER2String            "READ_BUFFER2"         /* asynFloat64Array,  r/o */
-#define P_READ_BUFFER3String            "READ_BUFFER3"         /* asynFloat64Array,  r/o */
-#define P_READ_BUFFER4String            "READ_BUFFER4"         /* asynFloat64Array,  r/o */
-#define P_READ_BUFFER_TIMEString        "READ_BUFFER_TIME"     /* asynFloat64Array,  r/o */
 
-#define TIMEOUT 2.0 // Scintillator response timeout
+//C400 specific commands (ASCII)
 #define C400_MSG_DAC_ASK "CONFigure:DAC?"
 #define C400_MSG_DAC_SET "CONFigure:DAC "
 #define C400_MSG_DEAD_ASK "CONFigure:DEADtime?"
@@ -77,7 +104,7 @@
 #define C400_MSG_BUFFER_SET "TRIGger:BUFfer "
 #define C400_MSG_BURST_ASK "TRIGger:BURst?"
 #define C400_MSG_BURST_SET "TRIGger:BURst "
-#define C400_MSG_COUNTS_ASK "FETch:COUNts?"
+#define C400_MSG_COUNTS_ASK "FETch:COUNts? "
 #define C400_MSG_ENCODER_ASK "FETch:ENCOder?"
 #define C400_MSG_DIGITAL_ASK "FETch:DIGital?"
 #define C400_MSG_TRIGGER_MODE_ASK "TRIGger:MODE?"
@@ -94,31 +121,53 @@
 #define C400_MSG_SYSTEM_IPMODE_SET "SYSTem:COMMunication:IPMODE "
 
 #define buffer_array_size 65536
+#define TIMEOUT 2.0 //Scintillator response timeout
 
-static string trigger_mode_mbbo[]={"CUSTom", "INTernal", "EXTERNAL_START", "EXTERNAL_START_STOP",
-                                        "EXTERNAL_START_HOLD", "EXTERNAL_WINDOWED", "DISCRIMINATOR_SWEEP"};
-static string system_ipmode_mbbo[]={"DHCP", "Static"};
+vector<string> trigger_mode= {"CUSTom", "INTernal", "EXTERNAL_START", "EXTERNAL_START_STOP", "EXTERNAL_START_HOLD", "EXTERNAL_WINDOWED", "DISCRIMINATOR_SWEEP"};
+vector<string> trigger_source={"INTernal", "BNC"};
+vector<string> system_ipmode={"DHCP", "Static"};
+vector<string> polarity={"N", "P"};
+vector<string> image_mode={"Single", "Multiple Unbuffered", "Multiple Buffered", "Continuous"};
 
-/** Class that demonstrates the use of the asynPortDriver base class to greatly simplify the task
-  * of writing an asyn port driver.
-  * This class does a simple simulation of a digital oscilloscope.  It computes a waveform, computes
-  * statistics on the waveform, and does callbacks with the statistics and the waveform data itself.
-  * I have made the methods of this class public in order to generate doxygen documentation for them,
-  * but they should really all be private. */
-class c400drv : public asynPortDriver {
+class Sample {
 public:
-    c400drv(const char *portName, char *ip);
+    epicsFloat64 integration;
+    epicsInt32 array_count[4];
+    epicsFloat64 timestamp;
+    epicsInt32 trigger_counts;
+    epicsFloat64 low_level[4]; 
+    epicsInt32 overflow;
+
+    Sample():   integration(0), array_count{0,0,0,0}, timestamp(0), 
+                trigger_counts(0), low_level{0,0,0,0}, overflow(0) {}
+};
+
+class c400drv : public ADDriver {
+public:
+    c400drv(const char *portName, const char *ip, int maxBuffers, size_t maxMemory, int priority, int stackSize);
 
     /* These are the methods that we override from asynPortDriver */
     virtual asynStatus writeFloat64(asynUser *pasynUser, epicsFloat64 value);
     virtual asynStatus writeInt32(asynUser *pasynUser, epicsInt32 value);
     virtual asynStatus readFloat64(asynUser *pasynUser, epicsFloat64 *value);
     virtual asynStatus readInt32(asynUser *pasynUser, epicsInt32 *value);
-    virtual asynStatus readFloat64Array(asynUser *pasynUser, epicsFloat64 *value,
-                                        size_t nElements, size_t *nIn);
+    virtual asynStatus readEnum(asynUser *pasynUser, char *strings[], int values[], int severities[], size_t nElements, size_t *nIn);
 
     /* These are the methods that are new to this class */
     void update_counts();
+
+    asynStatus send_to_equipment(const char *writeBuffer, string &response);
+    asynStatus send_to_equipment(const char *writeBuffer);
+    asynStatus receive_to_equipment(string &response);
+    asynStatus get_to_equipment(const char *command_ask, int n_element, double &response);
+    asynStatus set_to_equipment(const char *command_set, const char *command_ask, int channel, double value, double &response);
+    asynStatus set_4_channels_to_equipment(const char *command_set, const char *command_ask, int param1, int param2, int param3, int param4, int is_float, int channel, double &response);
+    asynStatus set_2_vals_to_equipment(const char *command_set, const char *command_ask, int param1, int param2, int is_float, int channel, double &response);
+    
+    asynStatus get_counts(); //get counts unbuffer (buffer = 0)
+    asynStatus get_buffer(); //get counts buffer (buffer > 0)
+    
+    asynStatus parse_counts(Sample *sample, string received_line);
     
 protected:
     /** Values used for pasynUser->reason, and indexes into the parameter library. */
@@ -143,59 +192,27 @@ protected:
     int P_HIVO_ENABLE2;
     int P_HIVO_ENABLE3;
     int P_HIVO_ENABLE4;
-    int P_PERIOD;
     int P_POLARITY1;
     int P_POLARITY2;
     int P_POLARITY3;
     int P_POLARITY4;
     int P_PULSER_Period;
     int P_PULSER_Width;
-    int P_ACQUIRE;
-    int P_BUFFER;
     int P_BURST;
-    int P_COUNT1;
-    int P_COUNT2;
-    int P_COUNT3;
-    int P_COUNT4;
     int P_ENCODER;
-    int P_TRIGGER_MODE;
     int P_TRIGGER_POLARITY;
     int P_TRIGGER_START;
     int P_TRIGGER_STOP;
     int P_TRIGGER_PAUSE;
     int P_SYSTEM_IPMODE;
-    int P_READ_BUFFER1;
-    int P_READ_BUFFER2;
-    int P_READ_BUFFER3;
-    int P_READ_BUFFER4;
-    int P_READ_BUFFER_TIME;
 
 private:
     asynUser *pasynUserEcho;
-    epicsFloat64 *pData_ch1;
-    epicsFloat64 *pData_ch2;
-    epicsFloat64 *pData_ch3;
-    epicsFloat64 *pData_ch4;
-    epicsFloat64 *pData_time;
+    NDArray *pImage;
+    size_t dims[2];
+    NDDataType_t dataType;
+    int arrayCallbacks   = 0;
+    int old_triggercounts = 0;
+    int accumulate_triggercounts = 0;
 
-    asynStatus send_to_equipment(const char *writeBuffer, string &response);
-    asynStatus send_to_equipment(const char *writeBuffer);
-
-    asynStatus get_to_equipment(const char *writeBuffer, int n_element, double &response);
-    asynStatus set_to_equipment(const char *command_set, const char *command_ask, int channel, double value, double &response);
-    
-    double set_4_channels(const char *command_set, const char *command_ask, int param1, 
-                            int param2, int param3, int param4, int channel, double val);
-
-    double set_4_channels_int(const char *command_set, const char *command_ask, int param1, 
-                            int param2, int param3, int param4, int channel, double val, int to_string=0);
-
-    double set_2_vals(const char *command_set, const char *command_ask, int param1, 
-                            int param2, int channel, double val, int is_float=1, int to_string=0);
-
-    void get_n_set_4_channels(const char *command_ask, int param1, int param2, int param3, int param4, 
-                                   int n_param1, int n_param2, int n_param3, int n_param4);
-    void set_mbbo(const char *command_set, const string *mbbo_list, int mbbo_value);
-    void update_buffer();
-    void parse_counts(double *result_array, string received_line);
 };

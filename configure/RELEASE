@@ -29,12 +29,14 @@
 # If using the sequencer, point SNCSEQ at its top directory:
 #SNCSEQ = $(MODULES)/seq-ver
 
-EPICS_BASE=/usr/local/epics-nfs/base/R3.15.6
-ASYN=/usr/local/epics-nfs/modules/R3.15.6/synApps/R6.1/support/asyn-R4-36
-
-PCRE_INCLUDE=/usr/include/pcre
-PCRE_LIB=/usr/lib
-
+EPICS_BASE=/usr/local/epics-nfs/base/R7.0.7
+SUPPORT=/usr/local/epics-nfs/modules/R7.0.7/synApps_6_2/synApps/support
+AREA_DETECTOR=$(SUPPORT)/areaDetector-R3-11
+ADCORE=$(AREA_DETECTOR)/ADCore
+ADSUPPORT=$(AREA_DETECTOR)/ADSupport
+ASYN=$(SUPPORT)/asyn-R4-42
+BUSY=$(SUPPORT)/busy-R1-7-3
+CALC=$(SUPPORT)/calc-R3-7-4
 
 # EPICS_BASE should appear last so earlier modules can override stuff:
 
