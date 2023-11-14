@@ -948,7 +948,7 @@ asynStatus c400drv::get_counts() {
 
         status = send_to_equipment(C400_MSG_COUNTS_ASK, response);
 
-        if(response != old_response) {
+        if(response != old_response && status == 0) {
             old_response = response;
             //cout << "count: " << response << endl;
             
@@ -991,10 +991,9 @@ asynStatus c400drv::get_counts() {
             else if (imageMode == 1 && numImagesCounter >= numImages) {
                 setIntegerParam(ADAcquire, 0);
             }
-
-            callParamCallbacks();
-            getIntegerParam(ADAcquire, &acquire);
         }
+        callParamCallbacks();
+        getIntegerParam(ADAcquire, &acquire);
     }
     this->unlock();
     status = send_to_equipment(C400_MSG_ABORT_SET);
@@ -1052,7 +1051,7 @@ asynStatus c400drv::get_buffer(){
         getline(iss, line);
         getline(iss, line);
 
-        while (line != "" && acquire)  {
+        while (line != "" && acquire && status == 0)  {
 
             first_5_char = line.substr(0, 5);
 
