@@ -149,6 +149,7 @@ void c400drv::update_counts(){
                 driverName, functionName);
             }
         }
+        epicsThreadSleep(1);
     }
 }
 
